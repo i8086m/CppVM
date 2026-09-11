@@ -39,7 +39,7 @@ mov8 a 58
 putc
 
 cin
-wr a 0 240
+wr a 240
 
 mov8 a 66
 putc
@@ -49,7 +49,7 @@ putc
 cin
 mov c a
 
-ld a 0 240
+ld a 240
 
 cmp 1
 jz SUM
@@ -85,7 +85,7 @@ KON:
 puts
 endl
 getkey
-jmp 0 0
+jmp 0
 
 noinf
 ret

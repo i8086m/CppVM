@@ -10,8 +10,8 @@ loop:
 	jmp loop
 
 string:
-	"Hello\, world! "+
-	"Privet\, mir!"
+	"Hello, world! "+
+	"Privet, mir!"
 
 
 exit:

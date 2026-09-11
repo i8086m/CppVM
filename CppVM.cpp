@@ -8,20 +8,23 @@
 
 #define RAMSIZE 65536
 #define RELJP(NUM) if (NUM > 127) i = i+NUM-256; else i = i + NUM
+#define STACKSIZE 64
+#define USTACKSIZE 128
 
 int state = 0;
 uint8_t ram[RAMSIZE];
 unsigned short int a,b,c = 0;
 unsigned short int ta,tb,tc,na,nb,nc = 0;
 unsigned short int sp, usp = 0;
-char ustack[32];
-unsigned short int stack[32];
+char ustack[USTACKSIZE];
+unsigned short int stack[STACKSIZE];
 unsigned short int i = 0;
 
 int tmp;
 //           Z N C R R R R R
 bool f[8] = {0,0,0,0,0,0,0,0};
 bool f_dbg = false;
+bool f_slo = false;
 bool f_msg = true;
 
 
@@ -52,20 +55,13 @@ int main() {
 		while (bc < RAMSIZE+1 && !fin.eof()) {
 			fin >> buff;
 			ram[bc] = buff;
-			if (buff == 250) {
-				f_msg = false;
-			}
-			if (buff == 251) {
-				f_dbg = true;
-				f_msg = false;
-			}
 			bc++;
 		}
 		fin.close();
 	}
 
 	if (f_msg) {
-		std::cout << "CppVM v1.3.0" << std::endl;
+		std::cout << "CppVM 1.4" << std::endl;
 		if (RAMSIZE >= 1024) {
 			std::cout << "RAM: " << RAMSIZE/1024 << "kb" << std::endl << std::endl;
 		} else {
@@ -88,7 +84,7 @@ r:
 			std::stringstream mon0;
 			std::string mon;
 			tmp--;
-			mon0 << "RAM " << "Usage: " << tmp << "/" << RAMSIZE << "b (" << tmp/RAMSIZE << "%)";
+			mon0 << "RAM " << "Usage: " << tmp << "/" << RAMSIZE << "b (" << tmp*100/RAMSIZE << "%)";
 			mon0 << "  |  A=" << a << ", B=" << b << ", C=" << c;
 			mon0 << "  |  PC=" << i << "  |  ram[PC]=" << +ram[i];
 			mon = mon0.str();			// Type 1
@@ -97,6 +93,9 @@ r:
 			tmp = 0;
 			strcpy(cmon, mon.c_str());
 			SetConsoleTitle(cmon);
+			if (f_slo) {
+				getch();
+			}
 		}
 		if (ram[i] == 0) {
 			// Do nothing
@@ -190,6 +189,7 @@ r:
 			a = tmp;
 		}
 		if (ram[i] == 15) {
+			//nodelay(stdscr,TRUE);
 			a = getch();
 		}
 		if (ram[i] == 16) {
@@ -213,11 +213,16 @@ r:
 			goto r;
 		}
 		if (ram[i] == 19) {
-			stack[sp] = (i+3);
-			sp++;
-			i++;
-			i = ram[i]*256+ram[i+1];
-			goto r;
+			if (sp < STACKSIZE) {
+				stack[sp] = (i+3);
+				sp++;
+				i++;
+				i = ram[i]*256+ram[i+1];
+				goto r;
+			} else {
+				std::cout << std::endl << "Error: Stack Overflow" << std::endl;
+				state = 2;
+			}
 		}
 		if (ram[i] == 20) {
 			i++;
@@ -665,9 +670,9 @@ r:
 		if (ram[i] == 156) {
 			i++;
 			a = (a ^ b);
-			goto r;	
+			goto r;
 		}
-		
+
 		if (ram[i] == 160) {
 			i++;
 			if (usp>0) {
@@ -681,7 +686,7 @@ r:
 				usp++;
 			}
 		}
-		
+
 		if (ram[i] == 162) {
 			usp = 0;
 		}
@@ -729,7 +734,26 @@ r:
 			i=i+2;
 			goto r;
 		}
-		
+
+		if (ram[i] == 250) {
+			//f_msg = false; Не работает (D'oh!)
+		}
+
+		if (ram[i] == 251) {
+			f_dbg = true;
+			f_slo = false;
+		}
+
+		if (ram[i] == 252) {
+			f_dbg = true;
+			f_slo = true;
+		}
+
+		if (ram[i] == 253) {
+			f_dbg = false;
+			f_slo = false;
+		}
+
 		if (ram[i] == 255) {
 			if (sp == 0) {
 				if (f_msg) {
