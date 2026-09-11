@@ -4,7 +4,7 @@
 #include <fstream>
 
 #define RAMSIZE 65536
-#define RELJP(NUM) if (NUM > 127) i = i+NUM-65536; else i = i + NUM
+#define RELJP(NUM) if (NUM > 127) i = i+NUM-256; else i = i + NUM
 
 int state = 0;
 uint8_t ram[RAMSIZE];
@@ -26,11 +26,10 @@ std::ifstream fin("bios.cvm"); // Чтение файла
 // TODO: '%' function
 // TODO: Multifile
 // TODO: Enchance assembler output
-// TODO: RELATIVE (AGAIN)
 
 int main() {
 
-	std::cout << "CppVM v1.2.0" << std::endl;//v171224
+	std::cout << "CppVM v1.2.1" << std::endl;//v171224
 
 	std::cout << "RAM: " << RAMSIZE/1024 << "KB" << std::endl << std::endl;
 
@@ -591,6 +590,88 @@ r:
 			i++;
 			goto r;
 		}
+		if (ram[i] == 190) {
+			//i++;
+			RELJP(ram[i+1]);
+			goto r;
+		}
+		if (ram[i] == 191) {
+			if (f[0]) {
+				//i++;
+				RELJP(ram[i+1]);
+				goto r;
+			}
+			i=i+1;
+			goto r;
+		}
+		if (ram[i] == 192) {
+			if (!f[0]) {
+				i++;
+				RELJP(ram[i]);
+				goto r;
+			}
+			i=i+2;
+			goto r;
+		}
+		if (ram[i] == 193) {
+			if (f[1]) {
+				i++;
+				RELJP(ram[i]);
+				goto r;
+			}
+			i=i+2;
+			goto r;
+		}
+		if (ram[i] == 194) {
+			if (!f[1]) {
+				i++;
+				RELJP(ram[i]);
+				goto r;
+			}
+			i=i+2;
+			goto r;
+		}
+		/*if (ram[i] == 195) {
+			//i++;
+			RELJP(c);
+			goto r;
+		}
+		if (ram[i] == 196) {
+			if (f[0]) {
+				//i++;
+				RELJP(c);
+				goto r;
+			}
+			i++;
+			goto r;
+		}
+		if (ram[i] == 197) {
+			if (!f[0]) {
+				//i++;
+				RELJP(c);
+				goto r;
+			}
+			i++;
+			goto r;
+		}
+		if (ram[i] == 198) {
+			if (f[1]) {
+				//i++;
+				RELJP(c);
+				goto r;
+			}
+			i++;
+			goto r;
+		}
+		if (ram[i] == 199) {
+			if (!f[1]) {
+				//i++;
+				RELJP(c);
+				goto r;
+			}
+			i++;
+			goto r;
+		}*/
 		if (ram[i] == 250) {
 			f[2] = true;
 		}
