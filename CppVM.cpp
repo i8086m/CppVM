@@ -10,7 +10,7 @@
 #define RELJP(NUM) if (NUM > 2147483647) i = i + NUM - 4294967296; else i = i + NUM
 #define STACKSIZE 64
 #define USTACKSIZE 128
-#define VERSION "CppVM v2.3"
+#define VERSION "CppVM v2.3.1"
 
 int state = 0;
 unsigned int ram[RAMSIZE];
