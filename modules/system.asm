@@ -1,5 +1,3 @@
-define beep as call system.sound
-
 system:
 wipe
 mov b a
@@ -11,7 +9,7 @@ out
 inc b
 jmp _sys.loop
 _sys.exit:
-do
+300
 ret
 
 system.sound:
@@ -33,7 +31,7 @@ jmp _sys.color.loop
 _sys.color.exit:
 mov a c
 out
-do
+300
 ret
 
 _system.colorstr:

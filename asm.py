@@ -1,16 +1,33 @@
+import os
+
 print('Opening files...')
 f_out = open('bios.cvm', 'w')
 
-try:
-	f_in = open('bios.asm')
-except:
+files = os.listdir()
+asm_files = []
+for i in files:
+	if i.endswith('.asm'):
+		asm_files.append(i)
+
+if not asm_files:
 	print('\n-----------------------------------------------')
 	print('Assemble failed. Source file not found')
 	print('-----------------------------------------------\n')
-	cvm = '255\nAssemble Failed\nerr: unableToFindSource(bios.asm)'
+	cvm = '0 0 0 255'
 	f_out.write(cvm)
 	f_out.close()
 	exit()
+elif len(asm_files) == 1:
+	file = asm_files[0]
+	print('Assembling: ', asm_files[0])
+else:
+	for i, a in enumerate(asm_files):
+		print('[' + str(i + 1) + '] ' + a)
+	file = input('Enter source file ID: ')
+	file = asm_files[int(file) - 1]
+	print('Assembling: ', file)
+
+f_in = open(file)
 
 labels = []
 lbln = []
@@ -35,7 +52,7 @@ for i in coms:
 			print('\n---------------------------------------------------------')
 			print('Assemble failed. Module ' + i + ' is not installed')
 			print('---------------------------------------------------------\n')
-			cvm = '0 0 0 255\nAssemble Failed\Module '+i+'is not installed'
+			cvm = '0 0 0 255'
 			f_out.write(cvm)
 			f_out.close()
 			exit()
@@ -46,6 +63,7 @@ asm = asm.replace('\t','')
 asm = asm.replace('{','')
 asm = asm.replace('}','ret')
 
+header = ''
 print('Preprocessing...')
 coms = asm.split('\n')
 for i in coms:
@@ -54,9 +72,15 @@ for i in coms:
 			a = i[7:]
 			a = a.split(' as ')
 			asm = asm.replace(i,'')
-			asm = asm.replace(a[0],a[1])
+			asm = asm.replace(a[0], a[1])
 		except:
 			print('define error')
+	if (str(i).startswith('org ')):
+		print('unsupported') # origin
+		exit()
+	if (str(i).startswith('header ')):
+		asm = asm.replace(str(i),'')
+		header += i[7:] + '\n'
 	if (str(i).startswith('message ')):
 		asm = asm.replace(i,'')
 		print(str(i[8:]))
@@ -66,7 +90,7 @@ for i in coms:
 		print(' Warning: '+str((i[8:])))
 		print()
 		input()
-
+asm = header + asm
 coms = asm.split('\n')
 funcs = []
 for i in coms:
@@ -95,7 +119,7 @@ for i in coms:
 print('Removing comments...')
 coms = asm.split('\n')
 for i in coms:
-	if (str(i).startswith('#')):
+	if (str(i).startswith('#')) or (str(i).startswith(';')):
 		asm = asm.replace(str(i),'')
 
 print('Converting strings...')
@@ -133,7 +157,7 @@ for ind, i in enumerate(coms):
 		except:
 			pass
 
-print('I dont know whats happening here...')
+# wtf
 coms = asm.replace('\n',' ')
 coms = coms.split(' ')
 out = list(filter(None, coms))
@@ -241,7 +265,7 @@ while (doCount > 0):
 	asm = asm.replace(' wr b ',' 54 ')
 	asm = asm.replace(' wr c ',' 55 ')
 
-	asm = asm.replace(' setpos ',' 100 ')
+	#asm = asm.replace(' setpos ',' 100 ')
 
 	asm = asm.replace(' add a b ',' 110 ')
 	asm = asm.replace(' add a c ',' 111 ')
@@ -294,7 +318,6 @@ while (doCount > 0):
 	asm = asm.replace(' in ',' 160 ')
 	asm = asm.replace(' out ',' 161 ')
 	asm = asm.replace(' wipe ',' 162 ')
-	asm = asm.replace(' do ',' 163 ')
 
 	asm = asm.replace(' inf ',' 250 ')
 	asm = asm.replace(' debug ',' 251 ')
@@ -313,10 +336,6 @@ for ind, com in enumerate(out): # запись в массив информац�
 		lab = out[ind].replace(':','')
 		lbln.append(str(lab))
 		lbli.append(str(ind))
-#for ind, com in enumerate(out): # добавить второй байт к каждой метке
-#	for nam in lbln:
-#		if com == nam:
-#			out.insert(ind+1,'000')
 lbln = []
 lbli = []
 for ind, com in enumerate(out): # удаление инициализаторов меток
@@ -329,8 +348,6 @@ for ind, nam in enumerate(lbln): # замена меток адресами
 	for indc, com in enumerate(out):
 		if (com == nam):
 			out[indc] = str(lbli[ind])
-			#out[indc] = str(list(divmod(int(lbli[ind]), 256))[0])
-			#out[indc+1] = str(list(divmod(int(lbli[ind]), 256))[1])
 print('Converting numbers...')
 
 for ind, i in enumerate(out): # отрицательные числа
@@ -382,4 +399,3 @@ f_out.write(cvm)
 f_out.close()
 
 print('Done!')
-#kek = input()

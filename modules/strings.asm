@@ -1,7 +1,3 @@
-define putstring as call putstr
-define getstring as call getstr
-
-
 # putstr(a)
 # выводит строку до '\0'
 # a - адрес строки

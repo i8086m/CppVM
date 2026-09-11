@@ -1,6 +1,6 @@
-#include <iostream> // ввод-вывод
+#define _WIN32_WINNT 0x500 // windows.h
 #include "windows.h" // system()
-#include <stdint.h> // uint8_t
+#include <iostream> // ввод-вывод
 #include <conio.h> // getch
 #include <fstream> // bootloader
 #include <string> // stack
@@ -10,7 +10,7 @@
 #define RELJP(NUM) if (NUM > 127) i = i+NUM-256; else i = i + NUM
 #define STACKSIZE 64
 #define USTACKSIZE 128
-#define VERSION "CppVM v2.0"
+#define VERSION "CVM v2.1"
 
 int state = 0;
 unsigned int ram[RAMSIZE];
@@ -28,9 +28,11 @@ bool flags[8] = {0,0,0,0,0,0,0,0};
 bool f_dbg = false;
 bool f_msg = false;
 
-
 std::ifstream fin("bios.cvm"); // Чтение файла
 
+RECT rect;
+HWND window = GetConsoleWindow();
+HDC hdc = GetDC(window);
 
 void gotoxy(int x, int y) {
     COORD coord;
@@ -38,8 +40,25 @@ void gotoxy(int x, int y) {
     coord.Y = y;
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
+void gfxmode(bool gfxState) {
+    gfxState = !gfxState;
+    if (!gfxState) {
+        ShowScrollBar(window, SB_BOTH, gfxState);
+    }
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO info;
+    info.dwSize = 100;
+    info.bVisible = gfxState;
+    SetConsoleCursorInfo(consoleHandle, &info);
+}
+void gfxclear(int colorShift) {
+    GetClientRect(window, &rect);
+    FillRect(hdc, &rect, (HBRUSH)(COLOR_WINDOW+colorShift));
+}
 
 int main() {
+    SelectObject(hdc, GetStockObject(DC_PEN));
+    SetDCPenColor(hdc, RGB(255,0,0));
     SetConsoleTitle(VERSION);
 
     while (i < RAMSIZE-1) { /// erase RAM
@@ -71,7 +90,6 @@ int main() {
 
 
     while (state == 0) {
-r:
         if (f_dbg) {
             bc = 0;
             tmp = 0;
@@ -137,7 +155,7 @@ r:
                 flags[1] = false;
             }
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 8) {
             if (a-b == 0) {
@@ -151,7 +169,7 @@ r:
                 flags[1] = false;
             }
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 9) {
             if (a-c == 0) {
@@ -165,7 +183,7 @@ r:
                 flags[1] = false;
             }
             i++;
-            goto r;
+            continue;
         }
 
         if (ram[i] == 10) {
@@ -203,7 +221,7 @@ r:
         }
         if (ram[i] == 17) {
             i = 0;
-            goto r;
+            continue;
         }
         if (ram[i] == 18) {
             ta = a;
@@ -216,7 +234,7 @@ r:
             nb = tb;
             nc = tc;
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 19) {
             if (sp < STACKSIZE) {
@@ -224,7 +242,7 @@ r:
                 sp++;
                 i++;
                 i = ram[i];
-                goto r;
+                continue;
             } else {
                 std::cout << std::endl << "Error: Stack Overflow" << std::endl;
                 state = 2;
@@ -233,84 +251,84 @@ r:
         if (ram[i] == 20) {
             i++;
             i = ram[i];
-            goto r;
+            continue;
         }
         if (ram[i] == 21) {
             if (flags[0]) {
                 i++;
                 i = ram[i];
-                goto r;
+                continue;
             }
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 22) {
             if (!flags[0]) {
                 i++;
                 i = ram[i];
-                goto r;
+                continue;
             }
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 23) {
             if (flags[1]) {
                 i++;
                 i = ram[i];
-                goto r;
+                continue;
             }
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 24) {
             if (!flags[1]) {
                 i++;
                 i = ram[i];
-                goto r;
+                continue;
             }
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 25) {
             i++;
             i = c;
-            goto r;
+            continue;
         }
         if (ram[i] == 26) {
             if (flags[0]) {
                 i++;
                 i = c;
-                goto r;
+                continue;
             }
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 27) {
             if (!flags[0]) {
                 i++;
                 i = c;
-                goto r;
+                continue;
             }
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 28) {
             if (flags[1]) {
                 i++;
                 i = c;
-                goto r;
+                continue;
             }
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 29) {
             if (!flags[1]) {
                 i++;
                 i = c;
-                goto r;
+                continue;
             }
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 30) {
             a = b;
@@ -334,167 +352,164 @@ r:
             i++;
             a=ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 41) {
             i++;
             b=ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 42) {
             i++;
             c=ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 43) {
             i++;
             a=ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 44) {
             i++;
             b=ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 45) {
             i++;
             c=ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 50) {
             i++;
             a=ram[ram[i]];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 51) {
             i++;
             b=ram[ram[i]];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 52) {
             i++;
             c=ram[ram[i]];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 53) {
             i++;
             ram[ram[i]] = a;
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 54) {
             i++;
             ram[ram[i]] = b;
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 55) {
             i++;
             ram[ram[i]] = c;
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 60) {
             i++;
             a = ram[a];
-            goto r;
+            continue;
         }
         if (ram[i] == 61) {
             i++;
             a = ram[b];
-            goto r;
+            continue;
         }
         if (ram[i] == 62) {
             i++;
             a = ram[c];
-            goto r;
+            continue;
         }
         if (ram[i] == 63) {
             i++;
             b = ram[a];
-            goto r;
+            continue;
         }
         if (ram[i] == 64) {
             i++;
             b = ram[b];
-            goto r;
+            continue;
         }
         if (ram[i] == 65) {
             i++;
             b = ram[c];
-            goto r;
+            continue;
         }
         if (ram[i] == 66) {
             i++;
             c = ram[a];
-            goto r;
+            continue;
         }
         if (ram[i] == 67) {
             i++;
             c = ram[b];
-            goto r;
+            continue;
         }
         if (ram[i] == 68) {
             i++;
             c = ram[c];
-            goto r;
+            continue;
         }
 
         if (ram[i] == 70) {
             i++;
             ram[a] = a;
-            goto r;
+            continue;
         }
         if (ram[i] == 71) {
             i++;
             ram[b] = a;
-            goto r;
+            continue;
         }
         if (ram[i] == 72) {
             i++;
             ram[c] = a;
-            goto r;
+            continue;
         }
         if (ram[i] == 73) {
             i++;
             ram[a] = b;
-            goto r;
+            continue;
         }
         if (ram[i] == 74) {
             i++;
             ram[b] = b;
-            goto r;
+            continue;
         }
         if (ram[i] == 75) {
             i++;
             ram[c] = b;
-            goto r;
+            continue;
         }
         if (ram[i] == 76) {
             i++;
             ram[a] = c;
-            goto r;
+            continue;
         }
         if (ram[i] == 77) {
             i++;
             ram[b] = c;
-            goto r;
+            continue;
         }
         if (ram[i] == 78) {
             i++;
             ram[c] = c;
-            goto r;
-        }
-        if (ram[i] == 100) {
-            gotoxy(a,b);
+            continue;
         }
         if (ram[i] == 110) {
             a=a+b;
@@ -518,19 +533,19 @@ r:
             i++;
             a=a+ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 117) {
             i++;
             b=b+ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 118) {
             i++;
             c=c+ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 120) {
             a=a-b;
@@ -554,19 +569,19 @@ r:
             i++;
             a=a-ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 127) {
             i++;
             b=b-ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 128) {
             i++;
             c=c-ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 130) {
             a=a*b;
@@ -590,19 +605,19 @@ r:
             i++;
             a=a*ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 137) {
             i++;
             b=b*ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 138) {
             i++;
             c=c*ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 140) {
             a=a/b;
@@ -626,57 +641,57 @@ r:
             i++;
             a=a/ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 147) {
             i++;
             b=b/ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 148) {
             i++;
             c=c/ram[i];
             i++;
-            goto r;
+            continue;
         }
         if (ram[i] == 150) {
             i++;
             a = (a & ram[i]*256+ram[i+1]);
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 151) {
             i++;
             a = (a | ram[i]*256+ram[i+1]);
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 152) {
             i++;
             a = (a ^ ram[i]*256+ram[i+1]);
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 153) {
             i++;
             a = (~ a);
-            goto r;
+            continue;
         }
         if (ram[i] == 154) {
             i++;
             a = (a & b);
-            goto r;
+            continue;
         }
         if (ram[i] == 155) {
             i++;
             a = (a | b);
-            goto r;
+            continue;
         }
         if (ram[i] == 156) {
             i++;
             a = (a ^ b);
-            goto r;
+            continue;
         }
 
         if (ram[i] == 160) {
@@ -696,49 +711,47 @@ r:
         if (ram[i] == 162) {
             usp = 0;
         }
-        if (ram[i] == 163) {
-            system(ustack);
-        }
+
         if (ram[i] == 190) {
             //i++;
             RELJP(ram[i+1]);
-            goto r;
+            continue;
         }
         if (ram[i] == 191) {
             if (flags[0]) {
                 //i++;
                 RELJP(ram[i+1]);
-                goto r;
+                continue;
             }
             i=i+1;
-            goto r;
+            continue;
         }
         if (ram[i] == 192) {
             if (!flags[0]) {
                 i++;
                 RELJP(ram[i]);
-                goto r;
+                continue;
             }
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 193) {
             if (flags[1]) {
                 i++;
                 RELJP(ram[i]);
-                goto r;
+                continue;
             }
             i=i+2;
-            goto r;
+            continue;
         }
         if (ram[i] == 194) {
             if (!flags[1]) {
                 i++;
                 RELJP(ram[i]);
-                goto r;
+                continue;
             }
             i=i+2;
-            goto r;
+            continue;
         }
 
         if (ram[i] == 250) {
@@ -777,10 +790,38 @@ r:
                 sp--;
                 i = stack[sp];
                 stack[sp] = 0;
-                goto r;
+                continue;
             }
         }
 
+        if (ram[i] == 300) {
+            system(ustack);
+        }
+
+        if (ram[i] == 301) {
+            gotoxy(a,b);
+        }
+        if (ram[i] == 302) {
+            gfxclear(a);
+        }
+        if (ram[i] == 303) {
+            gfxmode(true);
+        }
+        if (ram[i] == 304) {
+            SetDCPenColor(hdc, RGB(a, b, c));
+        }
+        if (ram[i] == 305) {
+            SetPixel(hdc, a, b, RGB(255,0,0));
+        }
+        if (ram[i] == 306) {
+            MoveToEx(hdc, a, b, NULL);
+        }
+        if (ram[i] == 307) {
+            LineTo(hdc, a, b);
+        }
+        if (ram[i] == 308) {
+            ReleaseDC(window, hdc);
+        }
         i++;
     }
     return 0;
