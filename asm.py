@@ -22,12 +22,14 @@ asm = asm.replace('*#1','*,')
 asm = asm.replace('*#2','*(')
 asm = asm.replace('*#3','*)')
 
+print('Removing comments...')
 coms = asm.split('\n')
 for i in coms:
     if (str(i).startswith('#')):
-        asm = asm.replace(i,'REM')
-
-
+        asm = asm.replace(str(i),'')
+        
+asm = asm.replace('  ',' ')
+asm = asm.replace('  ',' ')
 asm = asm.replace('\n',' ')
 
 asm = asm.replace('nop','0')

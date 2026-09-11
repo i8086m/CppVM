@@ -29,7 +29,7 @@ std::ifstream fin("bios.cvm"); // Чтение файла
 
 int main() {
 
-	std::cout << "CppVM v1.2.1" << std::endl;//v171224
+	std::cout << "CppVM v1.2.2" << std::endl;//v171224
 
 	std::cout << "RAM: " << RAMSIZE/1024 << "KB" << std::endl << std::endl;
 
