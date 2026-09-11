@@ -5,7 +5,7 @@
 Ошибки:
 - Не устанавливаются флаги при вычислении (решение - использовать cmp)
 - ? Ассемблер не поддерживает комманды 30-39
-- Ошибки ассемблера
+- Серьезные ошибки ассемблера
 
 Команды:
 
@@ -28,6 +28,8 @@
 15 - getkey
 16 - cls
 17 - rst
+18 - ex
+19 - call
 
 20 - jmp [addrH],[addrL]
 21 - jz  [addrH],[addrL]
@@ -62,12 +64,15 @@
 47 - mov b,[int]
 48 - mov c,[int]
 
-50 - ld a,[addr]
-51 - ld b,[addr]
-52 - ld c,[addr]
-53 - wr a,[addr]
-54 - wr b,[addr]
-55 - wr c,[addr]
+50 - ld a,(addr)
+51 - ld b,(addr)
+52 - ld c,(addr)
+53 - wr a,(addr)
+54 - wr b,(addr)
+55 - wr c,(addr)
+56 - ld a,(bc)
+57 - wr (a), bc
+58 - ld bc,[double]
 
 60 - add a,b
 61 - add a,c

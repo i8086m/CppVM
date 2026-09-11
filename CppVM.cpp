@@ -8,7 +8,10 @@
 
 int state = 0;
 uint8_t a,b,c = 0;
+uint8_t ta,tb,tc,na,nb,nc = 0;
 uint8_t ram[RAMSIZE];
+short int sp = 0;
+unsigned short int stack[4] = {0,0,0,0};
 unsigned short int i = 0;
 int tmp;
 
@@ -23,13 +26,12 @@ std::ifstream fin("bios.cvm"); // Чтение файла
 // TODO: '%' function
 // TODO: Multifile
 // TODO: Enchance assembler output
-// TODO: ASM nagative and chars
 // TODO: ASM 30-39
 
 int main() {
 
-	std::cout << "CppVM v1.1.1" << std::endl;//v171223
-	
+	std::cout << "CppVM v1.1.2" << std::endl;//v171223
+
 	std::cout << "RAM: " << RAMSIZE/1024 << "KB" << std::endl << std::endl;
 
 	while (i < RAMSIZE-1) { // erase RAM
@@ -130,8 +132,7 @@ r:
 		if (ram[i] == 11) {
 			if (a > 127) {
 				std::cout << a-256;
-			}
-			else {
+			} else {
 				std::cout << +a;
 			}
 		}
@@ -153,6 +154,25 @@ r:
 		}
 		if (ram[i] == 17) {
 			i = 0;
+			goto r;
+		}
+		if (ram[i] == 18) {
+			ta = a;
+			tb = b;
+			tc = c;
+			a = na;
+			b = nb;
+			c = nc;
+			na = ta;
+			nb = tb;
+			nc = tc;
+			goto r;
+		}
+		if (ram[i] == 19) {
+			stack[sp] = (i+3);
+			sp++;
+			i++;
+			i = ram[i]*256+ram[i+1];
 			goto r;
 		}
 		if (ram[i] == 20) {
@@ -387,7 +407,25 @@ r:
 		}
 		if (ram[i] == 55) {
 			i++;
-			ram[ram[i]*256+ram[i+1]]1 = c;
+			ram[ram[i]*256+ram[i+1]] = c;
+			i++;
+			goto r;
+		}
+		if (ram[i] == 56) {
+			i++;
+			a = ram[b*256+c];
+			goto r;
+		}
+		if (ram[i] == 57) {
+			i++;
+			ram[b*256+c] = a;
+			goto r;
+		}
+		if (ram[i] == 58) {
+			i++;
+			b = ram[i];
+			i++;
+			c = ram[i];
 			i++;
 			goto r;
 		}
@@ -542,13 +580,21 @@ r:
 			f[3] = true;
 		}
 		if (ram[i] == 255) {
-			if (!f[2]) {
-				std::cout << std::endl << "End" << std::endl;
+			if (sp == 0) {
+				if (!f[2]) {
+					std::cout << std::endl << "End" << std::endl;
+				}
+				if (f[3]) {
+					state = 2;
+				} else {
+					state = 1;
+				}
 			}
-			if (f[3]) {
-				state = 2;
-			} else {
-				state = 1;
+			else {
+				sp--;
+				i = stack[sp];
+				stack[sp] = 0;
+				goto r;
 			}
 		}
 
