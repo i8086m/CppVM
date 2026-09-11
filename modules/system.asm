@@ -5,7 +5,7 @@ _sys.loop:
 ld a b
 cmp 0
 jz _sys.exit
-out
+push
 inc b
 jmp _sys.loop
 _sys.exit:
@@ -25,14 +25,14 @@ _sys.color.loop:
 ld a b
 cmp 0
 jz _sys.color.exit
-out
+push
 inc b
 jmp _sys.color.loop
 _sys.color.exit:
 mov a c
-out
+push
 300
 ret
 
 _system.colorstr:
-"color "
+"color \0"

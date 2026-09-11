@@ -1,8 +1,13 @@
-CppVM v2.1 Final от 2018.12.02
+CppVM v2.2 Final от 2018.12.30
 
 Программы храняться в файле bios.cvm (в той же директории что и CppVM.exe)
 
 Изменения:
+
+2018.12.30 [2.2.0]: Статус "Final"
+2018.12.30 [2.2.0]: ASMpy полностью заменён на CVA X
+2018.12.24 [2.2.0]: Команда с кодом 17 заменена на call c
+2018.12.24 [2.2.0]: Начало разработки CVA X
 2018.12.29 [2.1.0]: Статус "Final"
 2018.12.01 [2.1.0]: Добавлена директива header <asm>
 2018.12.01 [2.1.0]: Добавлены "классические" комментарии (;comment)
@@ -19,76 +24,75 @@ CppVM v2.1 Final от 2018.12.02
 
 Планы:
 
-* head COMMAND для ассемблера
-* Добавить getch без заморозки потока (kbhit())
-* Удалить stringstream из cppvm
-* Функции compstr, startswith, copystr
-* Исправить побитовые команды и RJMP'ы
-* Запретить доступ к несуществующим ячейкам через RAMSIZE
-* Изменяемый RAMSIZE (Для расширения памяти на cvm/arduino)
-* Работа с файлами
-* Аргументы командной строки
+* Пользовательские команды (Функции 2.0) [2.3]
+* Добавить getch без заморозки потока (kbhit()) [2.3]
+* Аргументы командной строки [2.3]
+* Изменяемый RAMSIZE (через аргументы) [2.3]
+* Битовые сдвиги [2.3]
+
+* Набор команд SFML [2.4]
+* Работа с файлами [2.4]
+* Перевод исполняемых файлов в BIN-формат [2.4]
+
+* Проверить все команды и директивы [LTS 2 | 2.5]
+* Запретить доступ к несуществующим ячейкам через RAMSIZE [LTS 2 | 2.5]
+* Убрать глобальное i++ и заменить на i++ и continue для каждой команды [LTS 2 | 2.5]
+
 * Прерывания
-* Расширение набора регистров
-* Отдельный exch для каждого регистра
-* Битовые сдвиги
+* Функции compstr, startswith, copystr
 * Поддержка разной разрядности
-* Ввод с клавиатуры для openbf
-* Проверить все команды и директивы
 * Модуль float.asm
-* Перевод исполняемых файлов в HEX-формат
-* Компилятор
+
 
 Команды:
 
-command:		status:
-0 - nop			OK
-1 - inc a		OK
-2 - inc b		OK
-3 - inc c		OK
-4 - dec a		OK
-5 - dec b		OK
-6 - dec c		OK
-7 - cmp [32]		OK
-8 - cmp b		OK
-9 - cmp c		OK
+0 - nop
+1 - inc a
+2 - inc b
+3 - inc c
+4 - dec a
+5 - dec b
+6 - dec c
+7 - cmp [32]
+8 - cmp b
+9 - cmp c
 
-10 - put		OK
-11 - puts		OK
-12 - putc		OK
-13 - endl		OK
-14 - cin		OK
-15 - getkey		OK
-16 - cls		OK
-17 - rst		OK
-18 - exch		OK
-19 - call
+10 - put
+11 - puts
+12 - putc
+13 - endl
+14 - cin
+15 - getkey
+16 - cls
+17 - call c
+18 - exch
+19 - call (32)
 
-20 - jmp [32]		OK
-21 - jz  [32]		OK
-22 - jnz [32]		OK
-23 - jn  [32]		OK
-24 - jp  [32]		OK
-25 - jmp c		OK
-26 - jz  c		OK
-27 - jnz c		OK
-28 - jn  c		OK
-29 - jp  c		OK
+20 - jmp [32]
+21 - jz  [32]
+22 - jnz [32]
+23 - jn  [32]
+24 - jp  [32]
+25 - jmp c
+26 - jz  c
+27 - jnz c
+28 - jn  c
+29 - jp  c
 
 
-30 - mov a b		OK
-31 - mov a c		OK
-32 - mov b a		OK
-33 - mov b c		OK
-34 - mov c a		OK
-35 - mov c b		OK
+30 - mov a b
+31 - mov a c
+32 - mov b a
+33 - mov b c
+34 - mov c a
+35 - mov c b
 
-40 - mov8 a [16]	supressed
-41 - mov8 b [16]	supressed
-42 - mov8 c [16]	supressed
-43 - mov  a [32]	OK
-44 - mov  b [32]	OK
-45 - mov  c [32]	OK
+40 - СВОБОДНО
+41 - СВОБОДНО
+42 - СВОБОДНО
+43 - mov  a [32]
+44 - mov  b [32]
+45 - mov  c [32]
 
 
 50 - ld a (32)
@@ -158,19 +162,20 @@ command:		status:
 147 - div b [32]
 148 - div c [32]
 
-150 - and [32]	BROKEN
-151 - or  [32]
-152 - xor [32]
-153 - not a
-154 - and b
-155 - or  b
-156 - xor b
+150 - and [32]		OPCODE ONLY
+151 - or  [32]		OPCODE ONLY
+152 - xor [32]		OPCODE ONLY
+153 - not a		OPCODE ONLY
+154 - and b		OPCODE ONLY
+155 - or b		OPCODE ONLY
+156 - xor b		OPCODE ONLY
 
-160 - in
-161 - out
+160 - pop
+161 - push
 162 - wipe
+163
 
-190 - rjmp [signed]	BROKEN?
+190 - rjmp [signed]
 191 - rjz  [signed]
 192 - rjnz [signed]
 193 - rjn  [signed]
@@ -181,34 +186,28 @@ command:		status:
 252 - nodebug
 255 - ret
 
-300 - do
-301 - setpos
+300 - do		OPCODE ONLY
+301 - setpos		OPCODE ONLY
+
 
 Директивы ассемблера:
 
-import NAME - импорт модуля modules/NAME.asm
-;комментарий - для описания работы программы
-#комментарий - старый формат комментариев
 label: - метка
-'a' - символ
-"abcde" - строка
-"abcde"+ - строка без терминатора
-%10110 - двочиное число
+; комментарий - для описания работы программы
 -43 - отрицательное число
-define x as y - заменять все X на Y
+"abcde" - строка
+"abcde\0" - строка с терминатором
+import folder/file.asm - импорт модуля folder/file.asm
 header x - перенести строку в начало программы
-message x - вывод сообщения при сборке
-warning x - вывод предупреждения при сборке
-function_name(a, b) - вызов функции
-function function_name 2 - создание функции
+
 
 Справка по файлам:
 
-bios.asm - Исходный файл
-bios.cvm - Исполняемый файл
+*.asm - исходные файлы
+bios.cvm - исполняемый файл
 modules/ - папка с модулями
 examples/ - папка с примерами
-asm.py - ассемблер
-mide.py - среда разработки
+other/ - разные файлы
+asm.exe - ассемблер
 cppvm.exe - виртуальная машина
 readme.txt - информация о сборке

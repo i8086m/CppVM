@@ -1,4 +1,4 @@
 @ECHO OFF
-python asm.py
+asm.py
 cppvm.exe
 pause

@@ -1,9 +1,11 @@
-import system
+import modules/system.asm
+
+mov a "c"
+call system.color
 
 mov a command
 call system
-cin
+
 ret
 
-command:
-"color 17"
+command: "echo Hello World!\0"

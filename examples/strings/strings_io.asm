@@ -1,12 +1,12 @@
-import strings
+import modules/strings.asm
 
 
 mov a string
-mov8 b 10
+mov b 10
 call getstr
-# Ввод строки не длиннее 10 символов
+; Ввод строки не длиннее 10 символов
 
-mov8 b 0
+mov b 0
 
 loop:
 inc b
@@ -18,7 +18,7 @@ mov a b
 cmp 10
 jnz loop
 
-# Вывести строку 10 раз
+; Вывести строку 10 раз
 
 getkey
 ret

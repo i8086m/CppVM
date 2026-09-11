@@ -1,6 +1,6 @@
-# putstr(a)
-# выводит строку до '\0'
-# a - адрес строки
+; putstr(a)
+; выводит строку до '\0'
+; a - адрес строки
 putstr:
 mov b a
 _ploop:
@@ -14,10 +14,10 @@ _pexit:
 ret
 
 
-# getstr(a,b)
-# Записывает введённую строку
-# a - адрес строки
-# b - макс. длина строки
+; getstr(a,b)
+; Записывает введённую строку
+; a - адрес строки
+; b - макс. длина строки
 getstr:
 mov c b
 mov b a
@@ -36,11 +36,10 @@ inc b
 jmp _gloop
 _gexit:
 endl
-#inc b
-mov8 a 0
+mov a 0
 wr a b
 ret
 
-# TODO:
-# cpystr(a,b)
-# cmpstr(a,b)
+; TODO:
+; cpystr(a,b)
+; cmpstr(a,b)

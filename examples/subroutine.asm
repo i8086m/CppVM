@@ -12,7 +12,7 @@ cls
 ret
 
 load:
-mov8 a 5
+mov a 5
 ret
 
 prnt:

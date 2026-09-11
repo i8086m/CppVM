@@ -1,49 +1,49 @@
 cls
 
-mov8 a 16
+mov a 16
 putc
 
-mov8 a 32
+mov a 32
 putc
 
-mov8 a 67
+mov a 67
 putc
-mov8 a 97
+mov a 97
 putc
-mov8 a 108
+mov a 108
 putc
-mov8 a 99
-putc
-
-mov8 a 32
+mov a 99
 putc
 
-mov8 a 17
+mov a 32
+putc
+
+mov a 17
 putc
 
 endl
 
-mov8 a 65
+mov a 65
 putc
-mov8 a 58
+mov a 58
 putc
 
 cin
 mov b a
 
-mov8 a 79
+mov a 79
 putc
-mov8 a 112
+mov a 112
 putc
-mov8 a 58
+mov a 58
 putc
 
 cin
 wr a 240
 
-mov8 a 66
+mov a 66
 putc
-mov8 a 58
+mov a 58
 putc
 
 cin

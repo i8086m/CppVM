@@ -1,16 +1,31 @@
-import math
+import modules/math.asm
 
-mov a -7
+endl
+mov a 0
+sub a 5
+puts
+endl
 call mod
 puts
 endl
-mov a -564
+endl
+
+mov a 0
+sub a 123
+puts
+endl
 call mod
 puts
 endl
-mov8 a 123
+endl
+
+mov a 123
+sub a 0
+puts
+endl
 call mod
 puts
 endl
+
 cin
 ret

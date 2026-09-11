@@ -9,21 +9,7 @@ putc
 inc c
 jmp loop
 
-string:
-'H'
-'e'
-'l'
-'l'
-'o'
-','
-' '
-'w'
-'o'
-'r'
-'l'
-'d'
-'!'
-0
+string: "Hello World!\0"
 
 exit:
 cin

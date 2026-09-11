@@ -1,4 +1,4 @@
-import strings
+import modules/strings.asm
 
 cls
 mov a string
@@ -7,4 +7,4 @@ getkey
 ret
 
 string:
-"Hello World!"
+"Hello World!\0"

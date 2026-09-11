@@ -7,10 +7,10 @@
 #include <sstream> // string stream
 
 #define RAMSIZE 65536
-#define RELJP(NUM) if (NUM > 127) i = i+NUM-256; else i = i + NUM
+#define RELJP(NUM) if (NUM > 2147483647) i = i + NUM - 4294967296; else i = i + NUM
 #define STACKSIZE 64
 #define USTACKSIZE 128
-#define VERSION "CVM v2.1"
+#define VERSION "CppVM v2.2"
 
 int state = 0;
 unsigned int ram[RAMSIZE];
@@ -18,13 +18,13 @@ unsigned int a,b,c = 0; /// LEGACY
 unsigned int d,e = 0; /// EXTRA
 unsigned int ta,tb,tc,na,nb,nc = 0;
 unsigned int sp, usp = 0; /// stack pointers
-char ustack[USTACKSIZE]; /// Broken???
+char ustack[USTACKSIZE];
 unsigned int stack[STACKSIZE];
 unsigned int i = 0;
 
 int tmp;
-//           Z N C R R R R R
-bool flags[8] = {0,0,0,0,0,0,0,0};
+//               Z N C ?
+bool flags[4] = {0,0,0,0};
 bool f_dbg = false;
 bool f_msg = false;
 
@@ -138,7 +138,7 @@ int main() {
             i++;
             int tmpa = 0;
             int tmpb = 0;
-            if (a > 2147483648) {
+            if (a > 2147483648U) {
                 tmpa = a-4294967296;
             } else {
                 tmpa = a;
@@ -191,7 +191,7 @@ int main() {
         }
 
         if (ram[i] == 11) {
-            if (a > 2147483648) {
+            if (a > 2147483648U) {
                 std::cout << a-4294967296;
             } else {
                 std::cout << a;
@@ -220,8 +220,15 @@ int main() {
             system("cls");
         }
         if (ram[i] == 17) {
-            i = 0;
-            continue;
+            if (sp < STACKSIZE) {
+                stack[sp] = i+1;
+                sp++;
+                i = c;
+                continue;
+            } else {
+                std::cout << std::endl << "Error: Stack Overflow" << std::endl;
+                state = 2;
+            }
         }
         if (ram[i] == 18) {
             ta = a;
@@ -348,24 +355,7 @@ int main() {
         if (ram[i] == 35) {
             c = b;
         }
-        if (ram[i] == 40) {
-            i++;
-            a=ram[i];
-            i++;
-            continue;
-        }
-        if (ram[i] == 41) {
-            i++;
-            b=ram[i];
-            i++;
-            continue;
-        }
-        if (ram[i] == 42) {
-            i++;
-            c=ram[i];
-            i++;
-            continue;
-        }
+        /// 40-42 free
         if (ram[i] == 43) {
             i++;
             a=ram[i];
@@ -703,12 +693,15 @@ int main() {
         }
         if (ram[i] == 161) {
             ustack[usp] = a;
-            if (usp < 31) {
+            if (usp < USTACKSIZE) {
                 usp++;
             }
         }
 
         if (ram[i] == 162) {
+            for (int x = 0; x < USTACKSIZE; x++) {
+                ustack[x] = 0;
+            }
             usp = 0;
         }
 

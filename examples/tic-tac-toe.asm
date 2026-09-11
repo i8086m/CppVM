@@ -11,41 +11,41 @@ getkey
 
 cmp 169
 rjnz 3
-mov8 b 1
+mov b 1
 cmp 230
 rjnz 3
-mov8 b 3
+mov b 3
 cmp 227
 rjnz 3
-mov8 b 5
+mov b 5
 cmp 228
 rjnz 3
-mov8 b 9
+mov b 9
 cmp 235
 rjnz 3
-mov8 b 11
+mov b 11
 cmp 162
 rjnz 3
-mov8 b 13
+mov b 13
 cmp 239
 rjnz 3
-mov8 b 17
+mov b 17
 cmp 231
 rjnz 3
-mov8 b 19
+mov b 19
 cmp 225
 rjnz 3
-mov8 b 21
+mov b 21
 
 add c b
 
 ld a state
 cmp 0
-mov8 a 1
-mov8 b 'o'
+mov a 1
+mov b "o"
 rjz 5
-mov8 a 0
-mov8 b 'x'
+mov a 0
+mov b "x"
 wr a state
 
 wr b c
@@ -66,11 +66,11 @@ ret
 
 
 field:
-"| | | |"+
+"| | | |"
 10
-"| | | |"+
+"| | | |"
 10
-"| | | |"+
+"| | | |"
 255
 
 state:
