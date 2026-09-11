@@ -27,7 +27,9 @@ coms = asm.split('\n')
 for i in coms:
     if (str(i).startswith('#')):
         asm = asm.replace(str(i),'')
-        
+
+asm = asm.replace('(','')
+asm = asm.replace(')','')
 asm = asm.replace('  ',' ')
 asm = asm.replace('  ',' ')
 asm = asm.replace('\n',' ')
@@ -157,8 +159,8 @@ asm = asm.replace('div a ','146 ')
 asm = asm.replace('div b ','147 ')
 asm = asm.replace('div c ','148 ')
 
-asm = asm.replace('dbg ','250 ')
-asm = asm.replace('ide ','251 ')
+asm = asm.replace('noinf ','250 ')
+asm = asm.replace('debug ','251 ')
 asm = asm.replace('ret ','255 ')
 
 print('Calculating labels...')

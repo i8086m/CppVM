@@ -2,7 +2,7 @@ cls
 mov c string
 
 lbl_loop
-ld a (c)
+ld a c
 putc
 inc c
 cmp *!
@@ -24,7 +24,6 @@ lbl_string
 *!
 
 lbl_EXIT
-dbg
-ide
+noinf
 cin
 ret

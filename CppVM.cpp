@@ -1,7 +1,10 @@
 #include <iostream>
+#include "windows.h"
 #include <stdint.h>
 #include <conio.h>
 #include <fstream>
+#include <string>
+#include <sstream>
 
 #define RAMSIZE 65536
 #define RELJP(NUM) if (NUM > 127) i = i+NUM-256; else i = i + NUM
@@ -15,49 +18,85 @@ unsigned short int sp = 0;
 unsigned short int stack[32];
 unsigned short int i = 0;
 int tmp;
-
-//           Z N S S C R R R
+//           Z N C R R R R R
 bool f[8] = {0,0,0,0,0,0,0,0};
+bool f_dbg = false;
+bool f_msg = true;
+
 
 std::ifstream fin("bios.cvm"); // Чтение файла
 
-// TODO: Graphics support?
-// TODO: Auto-flags (sub, add, mull, div...)
-// TODO: '%' function
-// TODO: Multifile
-// TODO: Enchance assembler output
+
+void gotoxy(int x, int y) {
+	COORD coord;
+	coord.X = x;
+	coord.Y = y;
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
 
 int main() {
-
-	std::cout << "CppVM v1.2.2" << std::endl;//v171224
-
-	std::cout << "RAM: " << RAMSIZE/1024 << "KB" << std::endl << std::endl;
 
 	while (i < RAMSIZE-1) { // erase RAM
 		ram[i] = 0;
 		i++;
 	}
-	ram[RAMSIZE-1] = 255; // чтоб не циклилось
-	i = 0; // pc в ноль
-
-	int buff;
-	int bc = 0;
-
+	ram[RAMSIZE-1] = 255;
+	i = 0;
+	int buff, bc = 0;
 	if (!fin.is_open()) {
 		state = 1;
 	} else {
-		while (bc < RAMSIZE) {
+		while (bc < RAMSIZE+1 && !fin.eof()) {
 			fin >> buff;
 			ram[bc] = buff;
+			if (buff == 250) {
+				f_msg = false;
+			}
+			if (buff == 251) {
+				f_dbg = true;
+				f_msg = false;
+			}
 			bc++;
 		}
 		fin.close();
 	}
-
-	std::cout << "Running" << std::endl;
+	bc--;
+	if (f_msg) {
+		std::cout << "CppVM v1.2.3" << std::endl;//v171224
+		if (RAMSIZE >= 1024) {
+			std::cout << "RAM: " << RAMSIZE/1024 << "kb" << std::endl << std::endl;
+		} else {
+			std::cout << "RAM: " << RAMSIZE << " bytes" << std::endl << std::endl;
+		}
+		std::cout << "Running" << std::endl;
+	}
 
 	while (state == 0) {
 r:
+		if (f_dbg) {
+			bc = 0;
+			tmp = 0;
+			while (bc<RAMSIZE) {
+				if (ram[bc] != 0) {
+					tmp++;
+				}
+				bc++;
+			}
+
+			std::stringstream mon0;
+			std::string mon;
+			tmp--;
+			mon0 << "RAM " << "Usage: " << tmp << "/" << RAMSIZE << "b (" << tmp/RAMSIZE << "%)";
+			mon0 << "  |  A=" << a << ", B=" << b << ", C=" << c;
+			mon0 << "  |  PC=" << i << "  |  ram[PC]=" << +ram[i];
+			mon = mon0.str();			// Type 1
+			//std::getline(mon0, mon);	// Type 2
+			char cmon[64];
+			tmp = 0;
+			strcpy(cmon, mon.c_str());
+			getch();
+			SetConsoleTitle(cmon);
+		}
 		if (ram[i] == 0) {
 			// Do nothing
 		}
@@ -136,14 +175,12 @@ r:
 			}
 		}
 		if (ram[i] == 12) {
-			//std::cout << a << std::endl;
 			if (a < 256) {
 				char ch;
-				//std::cout << a;
 				ch = (char)a;
 				std::cout << ch;
 			}
-			
+
 		}
 		if (ram[i] == 13) {
 			std::cout << "\n";
@@ -282,7 +319,7 @@ r:
 		if (ram[i] == 35) {
 			c = b;
 		}
-		
+
 		if (ram[i] == 40) {
 			i++;
 			a=ram[i];
@@ -400,7 +437,7 @@ r:
 			c = ram[c];
 			goto r;
 		}
-		
+
 		if (ram[i] == 70) {
 			i++;
 			ram[a] = a;
@@ -672,24 +709,13 @@ r:
 			i++;
 			goto r;
 		}*/
-		if (ram[i] == 250) {
-			f[2] = true;
-		}
-		if (ram[i] == 251) {
-			f[3] = true;
-		}
 		if (ram[i] == 255) {
 			if (sp == 0) {
-				if (!f[2]) {
+				if (f_msg) {
 					std::cout << std::endl << "End" << std::endl;
 				}
-				if (f[3]) {
-					state = 2;
-				} else {
-					state = 1;
-				}
-			}
-			else {
+				state = 2; // Exit
+			} else {
 				sp--;
 				i = stack[sp];
 				stack[sp] = 0;
@@ -700,7 +726,6 @@ r:
 		i++;
 	}
 
-d:
 	if (state == 1) {
 		i = 0;
 		a = 0;
@@ -713,11 +738,11 @@ d:
 		std::cout << std::endl << std::endl << "Mini IDE" << std::endl;
 		std::cout << "255 to save&exit" << std::endl << std::endl;
 		int sas = 0;
-		while (i < 255) {
+		while (i < RAMSIZE-1) {
 			ram[i] = 0;
 			i++;
 		}
-		ram[255] = 255;
+		ram[RAMSIZE-1] = 255;
 		i = 0;
 		while (state == 1) {
 			std::cout << "Enter address " << i << " value: ";

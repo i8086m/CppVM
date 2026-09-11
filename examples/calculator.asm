@@ -87,6 +87,5 @@ endl
 getkey
 jmp 0 0
 
-ide
-dbg
+noinf
 ret

@@ -9,6 +9,5 @@ lbl_EXIT
 mov8 a 3
 putc
 cin
-ide
-dbg
+noinf
 ret
