@@ -35,7 +35,7 @@ for i in coms:
 			print('\n---------------------------------------------------------')
 			print('Assemble failed. Module ' + i + ' is not installed')
 			print('---------------------------------------------------------\n')
-			cvm = '255\nAssemble Failed\nerr: unableToFindModule(' + i + ')'
+			cvm = '0 0 0 255\nAssemble Failed\Module '+i+'is not installed'
 			f_out.write(cvm)
 			f_out.close()
 			exit()
@@ -54,10 +54,7 @@ for i in coms:
 			a = i[7:]
 			a = a.split(' as ')
 			asm = asm.replace(i,'')
-			asm = asm.replace(' '+a[0]+' ',' '+(a[1].replace('\\n','\n'))+' ')
-			asm = asm.replace('\n'+a[0]+' ','\n'+(a[1].replace('\\n','\n'))+' ')
-			asm = asm.replace(' '+a[0]+'\n',' '+(a[1].replace('\\n','\n'))+'\n')
-			asm = asm.replace('\n'+a[0]+'\n','\n'+(a[1].replace('\\n','\n'))+'\n')
+			asm = asm.replace(a[0],a[1])
 		except:
 			print('define error')
 	if (str(i).startswith('message ')):
@@ -136,7 +133,7 @@ for ind, i in enumerate(coms):
 		except:
 			pass
 
-print('Splitting 16-bit numbers...')
+print('I dont know whats happening here...')
 coms = asm.replace('\n',' ')
 coms = coms.split(' ')
 out = list(filter(None, coms))
@@ -144,24 +141,7 @@ lbln = []
 for ind, com in enumerate(coms):
 	if com.endswith(':'):
 		lbln.append(str(com.replace(':','')))
-coms = asm.split('\n')
-doubleints = ['cmp ','mov ','jmp ','jz ','jnz ','jn ','jp ','and ','or ','xor ','ld ','wr ']
-for ind, i in enumerate(coms):
-	for a in doubleints:
-		if (i.startswith(a)):
-			b = i.replace(a,'')
-			d = ''
-			x = 0
-			for f in lbln:
-				if f in b:
-					x = 1
-			if (x == 0):
-				for c in b:
-					if (c in '-1234567890'):
-						d = d + c
-				if (d):
-					e = str(int(d)//256) + ' ' + str(int(d)%256)
-					asm = asm.replace(i+'\n',i.replace(d,e)+'\n')
+
 
 print('Assembling...')
 doCount = 2
@@ -333,10 +313,10 @@ for ind, com in enumerate(out): # запись в массив информац�
 		lab = out[ind].replace(':','')
 		lbln.append(str(lab))
 		lbli.append(str(ind))
-for ind, com in enumerate(out): # добавить второй байт к каждой метке
-	for nam in lbln:
-		if com == nam:
-			out.insert(ind+1,'000')
+#for ind, com in enumerate(out): # добавить второй байт к каждой метке
+#	for nam in lbln:
+#		if com == nam:
+#			out.insert(ind+1,'000')
 lbln = []
 lbli = []
 for ind, com in enumerate(out): # удаление инициализаторов меток
@@ -345,19 +325,18 @@ for ind, com in enumerate(out): # удаление инициализаторо�
 		del out[ind]
 		lbln.append(str(lab))
 		lbli.append(str(ind))
-
 for ind, nam in enumerate(lbln): # замена меток адресами
 	for indc, com in enumerate(out):
 		if (com == nam):
-			out[indc] = str(list(divmod(int(lbli[ind]), 256))[0])
-			out[indc+1] = str(list(divmod(int(lbli[ind]), 256))[1])
-
+			out[indc] = str(lbli[ind])
+			#out[indc] = str(list(divmod(int(lbli[ind]), 256))[0])
+			#out[indc+1] = str(list(divmod(int(lbli[ind]), 256))[1])
 print('Converting numbers...')
 
 for ind, i in enumerate(out): # отрицательные числа
 	if (str(i).startswith('-')):
 		a = i[1:]
-		a = 256-int(a)
+		a = 4294967296-int(a)
 		out[ind] = a
 
 
@@ -367,31 +346,21 @@ for ind, i in enumerate(out): # двоичные числа
 		a = int(a,2)
 		out[ind] = a
 
-
-for com in out:
-	cvm = cvm + str(com) + ' '
-
+		
 print('Checking output...')
+cvm = ''
+for i in out:
+	cvm+=str(i)
 count = 0
 for i in cvm:
 	if i.isalpha() and not i == ' ':
 		count += 1
 		errors = errors + i
-
-
-print('Coneverting...')
-################
-# Convert here #
-################
-
-
-
-
 if count != 0:
 	print('\n-----------------------------------------------')
 	print('Assemble failed. Unknown command: ' + errors)
 	print('-----------------------------------------------\n')
-	cvm = '255\nAssemble Failed\nerr: unknownCommand(' + errors + ')'
+	cvm = '0 0 0 255'
 	f_out.write(cvm)
 	f_out.close()
 	exit()
@@ -400,6 +369,12 @@ else:
 	print('Assemble completed.')
 	print('---------------------\n')
 
+cvm = ''
+for i in out:
+	ia = int(i)//(256*256)
+	ib = int(i)%(256*256)
+	cvm+= str(int(ia)//(256)) + ' ' + str(int(ia)%(256)) + ' '
+	cvm+= str(int(ib)//(256)) + ' ' + str(int(ib)%(256)) + '\n'
 
 print('Writing...')
 cvm = cvm.replace(' ','\n')

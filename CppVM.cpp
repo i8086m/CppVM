@@ -10,20 +10,21 @@
 #define RELJP(NUM) if (NUM > 127) i = i+NUM-256; else i = i + NUM
 #define STACKSIZE 64
 #define USTACKSIZE 128
-#define VERSION "1.5"
+#define VERSION "CppVM v2.0"
 
 int state = 0;
-uint8_t ram[RAMSIZE];
-unsigned short int a,b,c = 0;
-unsigned short int ta,tb,tc,na,nb,nc = 0;
-unsigned short int sp, usp = 0;
-char ustack[USTACKSIZE];
-unsigned short int stack[STACKSIZE];
-unsigned short int i = 0;
+unsigned int ram[RAMSIZE];
+unsigned int a,b,c = 0; /// LEGACY
+unsigned int d,e = 0; /// EXTRA
+unsigned int ta,tb,tc,na,nb,nc = 0;
+unsigned int sp, usp = 0; /// stack pointers
+char ustack[USTACKSIZE]; /// Broken???
+unsigned int stack[STACKSIZE];
+unsigned int i = 0;
 
 int tmp;
 //           Z N C R R R R R
-bool f[8] = {0,0,0,0,0,0,0,0};
+bool flags[8] = {0,0,0,0,0,0,0,0};
 bool f_dbg = false;
 bool f_msg = false;
 
@@ -35,11 +36,11 @@ void gotoxy(int x, int y) {
     COORD coord;
     coord.X = x;
     coord.Y = y;
-    coord.Y = y;
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
 int main() {
+    SetConsoleTitle(VERSION);
 
     while (i < RAMSIZE-1) { /// erase RAM
         ram[i] = 0;
@@ -56,6 +57,13 @@ int main() {
         while (bc < RAMSIZE+1 && !fin.eof()) {
             fin >> buff;
             ram[bc] = buff;
+            fin >> buff;
+            ram[bc] = ram[bc]*256+buff;
+            fin >> buff;
+            ram[bc] = ram[bc]*256+buff;
+            fin >> buff;
+            ram[bc] = ram[bc]*256+buff;
+            //std::cout << bc << " " << ram[bc] <<std::endl;
             bc++;
         }
         fin.close();
@@ -85,6 +93,7 @@ r:
             tmp = 0;
             strcpy(cmon, mon.c_str());
             SetConsoleTitle(cmon);
+            getch();
         }
         if (ram[i] == 0) {
             // Do nothing
@@ -109,43 +118,51 @@ r:
         }
         if (ram[i] == 7) {
             i++;
-            if (a-(ram[i]*256+ram[i+1]) == 0) {
-                f[0] = true;
+            int tmpa = 0;
+            int tmpb = 0;
+            if (a > 2147483648) {
+                tmpa = a-4294967296;
             } else {
-                f[0] = false;
+                tmpa = a;
             }
-            if ((short int)a-(ram[i]*256+ram[i+1]) < 0) {
-                f[1] = true;
+            tmpb = ram[i];
+            if (tmpa-tmpb == 0) {
+                flags[0] = true;
             } else {
-                f[1] = false;
+                flags[0] = false;
             }
-            i=i+2;
+            if (tmpa-tmpb < 0) {
+                flags[1] = true;
+            } else {
+                flags[1] = false;
+            }
+            i++;
             goto r;
         }
         if (ram[i] == 8) {
             if (a-b == 0) {
-                f[0] = true;
+                flags[0] = true;
             } else {
-                f[0] = false;
+                flags[0] = false;
             }
             if (a-b < 0) {
-                f[1] = true;
+                flags[1] = true;
             } else {
-                f[1] = false;
+                flags[1] = false;
             }
             i++;
             goto r;
         }
         if (ram[i] == 9) {
             if (a-c == 0) {
-                f[0] = true;
+                flags[0] = true;
             } else {
-                f[0] = false;
+                flags[0] = false;
             }
             if (a-c < 0) {
-                f[1] = true;
+                flags[1] = true;
             } else {
-                f[1] = false;
+                flags[1] = false;
             }
             i++;
             goto r;
@@ -156,13 +173,13 @@ r:
         }
 
         if (ram[i] == 11) {
-            if (a > 32767) {
-                std::cout << a-65536;
+            if (a > 2147483648) {
+                std::cout << a-4294967296;
             } else {
                 std::cout << a;
             }
         }
-        if (ram[i] == 12) {
+        if (ram[i] == 12) {///unicode?
             if (a < 256) {
                 char ch;
                 ch = (char)a;
@@ -203,10 +220,10 @@ r:
         }
         if (ram[i] == 19) {
             if (sp < STACKSIZE) {
-                stack[sp] = (i+3);
+                stack[sp] = i+2;
                 sp++;
                 i++;
-                i = ram[i]*256+ram[i+1];
+                i = ram[i];
                 goto r;
             } else {
                 std::cout << std::endl << "Error: Stack Overflow" << std::endl;
@@ -215,43 +232,43 @@ r:
         }
         if (ram[i] == 20) {
             i++;
-            i = ram[i]*256+ram[i+1];
+            i = ram[i];
             goto r;
         }
         if (ram[i] == 21) {
-            if (f[0]) {
+            if (flags[0]) {
                 i++;
-                i = ram[i]*256+ram[i+1];
+                i = ram[i];
                 goto r;
             }
-            i=i+3;
+            i=i+2;
             goto r;
         }
         if (ram[i] == 22) {
-            if (!f[0]) {
+            if (!flags[0]) {
                 i++;
-                i = ram[i]*256+ram[i+1];
+                i = ram[i];
                 goto r;
             }
-            i=i+3;
+            i=i+2;
             goto r;
         }
         if (ram[i] == 23) {
-            if (f[1]) {
+            if (flags[1]) {
                 i++;
-                i = ram[i]*256+ram[i+1];
+                i = ram[i];
                 goto r;
             }
-            i=i+3;
+            i=i+2;
             goto r;
         }
         if (ram[i] == 24) {
-            if (!f[1]) {
+            if (!flags[1]) {
                 i++;
-                i = ram[i]*256+ram[i+1];
+                i = ram[i];
                 goto r;
             }
-            i=i+3;
+            i=i+2;
             goto r;
         }
         if (ram[i] == 25) {
@@ -260,7 +277,7 @@ r:
             goto r;
         }
         if (ram[i] == 26) {
-            if (f[0]) {
+            if (flags[0]) {
                 i++;
                 i = c;
                 goto r;
@@ -269,7 +286,7 @@ r:
             goto r;
         }
         if (ram[i] == 27) {
-            if (!f[0]) {
+            if (!flags[0]) {
                 i++;
                 i = c;
                 goto r;
@@ -278,7 +295,7 @@ r:
             goto r;
         }
         if (ram[i] == 28) {
-            if (f[1]) {
+            if (flags[1]) {
                 i++;
                 i = c;
                 goto r;
@@ -287,7 +304,7 @@ r:
             goto r;
         }
         if (ram[i] == 29) {
-            if (!f[1]) {
+            if (!flags[1]) {
                 i++;
                 i = c;
                 goto r;
@@ -333,56 +350,56 @@ r:
         }
         if (ram[i] == 43) {
             i++;
-            a=ram[i]*256+ram[i+1];
-            i=i+2;
+            a=ram[i];
+            i++;
             goto r;
         }
         if (ram[i] == 44) {
             i++;
-            b=ram[i]*256+ram[i+1];
-            i=i+2;
+            b=ram[i];
+            i++;
             goto r;
         }
         if (ram[i] == 45) {
             i++;
-            c=ram[i]*256+ram[i+1];
-            i=i+2;
+            c=ram[i];
+            i++;
             goto r;
         }
         if (ram[i] == 50) {
             i++;
-            a=ram[ram[i]*256+ram[i+1]];
-            i=i+2;
+            a=ram[ram[i]];
+            i++;
             goto r;
         }
         if (ram[i] == 51) {
             i++;
-            b=ram[ram[i]*256+ram[i+1]];
-            i=i+2;
+            b=ram[ram[i]];
+            i++;
             goto r;
         }
         if (ram[i] == 52) {
             i++;
-            c=ram[ram[i]*256+ram[i+1]];
-            i=i+2;
+            c=ram[ram[i]];
+            i++;
             goto r;
         }
         if (ram[i] == 53) {
             i++;
-            ram[ram[i]*256+ram[i+1]] = a;
-            i=i+2;
+            ram[ram[i]] = a;
+            i++;
             goto r;
         }
         if (ram[i] == 54) {
             i++;
-            ram[ram[i]*256+ram[i+1]] = b;
-            i=i+2;
+            ram[ram[i]] = b;
+            i++;
             goto r;
         }
         if (ram[i] == 55) {
             i++;
-            ram[ram[i]*256+ram[i+1]] = c;
-            i=i+2;
+            ram[ram[i]] = c;
+            i++;
             goto r;
         }
         if (ram[i] == 60) {
@@ -688,7 +705,7 @@ r:
             goto r;
         }
         if (ram[i] == 191) {
-            if (f[0]) {
+            if (flags[0]) {
                 //i++;
                 RELJP(ram[i+1]);
                 goto r;
@@ -697,7 +714,7 @@ r:
             goto r;
         }
         if (ram[i] == 192) {
-            if (!f[0]) {
+            if (!flags[0]) {
                 i++;
                 RELJP(ram[i]);
                 goto r;
@@ -706,7 +723,7 @@ r:
             goto r;
         }
         if (ram[i] == 193) {
-            if (f[1]) {
+            if (flags[1]) {
                 i++;
                 RELJP(ram[i]);
                 goto r;
@@ -715,7 +732,7 @@ r:
             goto r;
         }
         if (ram[i] == 194) {
-            if (!f[1]) {
+            if (!flags[1]) {
                 i++;
                 RELJP(ram[i]);
                 goto r;
@@ -736,7 +753,7 @@ r:
             std::stringstream mon0;
             std::string mon;
             tmp--;
-            std::cout << "CppVM v" << VERSION << std::endl;
+            std::cout << VERSION << std::endl;
             std::cout << "RAM Used: " << tmp << "/" << RAMSIZE << "b (" << tmp*100/RAMSIZE << "%)" << std::endl << std::endl;
             f_msg = true;
         }

@@ -1,83 +1,103 @@
-CppVM LTS (v1.5) Final от 18.10.06
+CppVM v2.0 Final от 2018.12.01
 
 Программы храняться в файле bios.cvm (в той же директории что и CppVM.exe)
 
+Изменения:
+
+2018.12.01 [2.1.0]: Начало разработки 2.1
+2018.12.01 [2.0.0]: Статус "Final"
+2018.11.29 [2.0.0]: Правки
+
 
 Планы:
-- написать модуль float.asm
-- продвинутый загрузчик (2.1/3.0)
-- аргументы командной строки (2.1/3.0)
-- функции compstr, startswith, copystr (2.0+)
-- выключить автоотправку строки (???)
-- нормальные строки ("hello" + 32 + "world!") (попробовать посимвольную обработку)
-- доделать openbf (важно)
-- прерывания (2.0)
-- перевод исполняемых файлов в HEX-формат
-- getch без заморозки потока (kbhit())
-- графика (SFML, 2.1/3.0/3.1/4.0+)
-- x32 (см. конец файла, 2.0)
-- FASCL
-- exch (a, b, c)
-- битовые сдвиги
 
+* Классический формат комментариев (;) [2.1]
+* Графика [SFML/WinAPI, 2.1]
+* Команды зависящие от платформы [2.1]
+* Идентификатор платформы [2.1]
+* head COMMAND для ассемблера [2.1]
+* Добавить getch без заморозки потока (kbhit()) [2.1]
+
+* Функции compstr, startswith, copystr [2.2]
+* Исправить побитовые команды и RJMP'ы [2.2]
+* Запретить доступ к несуществующим ячейкам через RAMSIZE [2.2]
+* Изменяемый RAMSIZE (Для расширения памяти на cvm/arduino) [2.2]
+
+* Выбор файла для сборки [2.3]
+* Работа с файлами [2.3]
+* Аргументы командной строки [2.3]
+* Две директивы define идущих подряд ломают программу [2.3]
+
+* Прерывания [2.4]
+* Расширение набора регистров [2.4]
+* Отдельный exch для каждого регистра [2.4]
+* Битовые сдвиги [2.4]
+
+* Ввод с клавиатуры для openbf
+* Проверить все команды и директивы
+* Модуль float.asm
+* Нормальные строки ("hello" + 32 + "world!") (попробовать посимвольную обработку)
+* Перевод исполняемых файлов в HEX-формат
+* Компилятор
 
 Команды:
 
-0 - nop
-1 - inc a
-2 - inc b
-3 - inc c
-4 - dec a
-5 - dec b
-6 - dec c
-7 - cmp [double]
-8 - cmp b
-9 - cmp c
+command:		status:
+0 - nop			OK
+1 - inc a		OK
+2 - inc b		OK
+3 - inc c		OK
+4 - dec a		OK
+5 - dec b		OK
+6 - dec c		OK
+7 - cmp [32]		OK
+8 - cmp b		OK
+9 - cmp c		OK
 
-10 - put
-11 - puts
-12 - putc
-13 - endl
-14 - cin
-15 - getkey
-16 - cls
-17 - rst
-18 - exch
+10 - put		OK
+11 - puts		OK
+12 - putc		OK
+13 - endl		OK
+14 - cin		OK
+15 - getkey		OK
+16 - cls		OK
+17 - rst		OK
+18 - exch		OK
 19 - call
 
-20 - jmp [double]
-21 - jz  [double]
-22 - jnz [double]
-23 - jn  [double]
-24 - jp  [double]
-25 - jmp c
-26 - jz  c
-27 - jnz c
-28 - jn  c
-29 - jp  c
+20 - jmp [32]		OK
+21 - jz  [32]		OK
+22 - jnz [32]		OK
+23 - jn  [32]		OK
+24 - jp  [32]		OK
+25 - jmp c		OK
+26 - jz  c		OK
+27 - jnz c		OK
+28 - jn  c		OK
+29 - jp  c		OK
 
 
-30 - mov a b
-31 - mov a c
-32 - mov b a
-33 - mov b c
-34 - mov c a
-35 - mov c b
+30 - mov a b		OK
+31 - mov a c		OK
+32 - mov b a		OK
+33 - mov b c		OK
+34 - mov c a		OK
+35 - mov c b		OK
 
-40 - mov8 a [int]
-41 - mov8 b [int]
-42 - mov8 c [int]
-43 - mov  a [double]
-44 - mov  b [double]
-45 - mov  c [double]
+40 - mov8 a [16]	supressed
+41 - mov8 b [16]	supressed
+42 - mov8 c [16]	supressed
+43 - mov  a [32]	OK
+44 - mov  b [32]	OK
+45 - mov  c [32]	OK
 
 
-50 - ld a (addr)
-51 - ld b (addr)
-52 - ld c (addr)
-53 - wr a (addr)
-54 - wr b (addr)
-55 - wr c (addr)
+50 - ld a (32)
+51 - ld b (32)
+52 - ld c (32)
+53 - wr a (32)
+54 - wr b (32)
+55 - wr c (32)
 
 60 - ld a (a)
 61 - ld a (b)
@@ -107,9 +127,9 @@ CppVM LTS (v1.5) Final от 18.10.06
 113 - add b c
 114 - add c a
 115 - add c b
-116 - add a [int]
-117 - add b [int]
-118 - add c [int]
+116 - add a [32]
+117 - add b [32]
+118 - add c [32]
 
 120 - sub a b
 121 - sub a c
@@ -117,9 +137,9 @@ CppVM LTS (v1.5) Final от 18.10.06
 123 - sub b c
 124 - sub c a
 125 - sub c b
-126 - sub a [int]
-127 - sub b [int]
-128 - sub c [int]
+126 - sub a [32]
+127 - sub b [32]
+128 - sub c [32]
 
 130 - mul a b
 131 - mul a c
@@ -127,9 +147,9 @@ CppVM LTS (v1.5) Final от 18.10.06
 133 - mul b c
 134 - mul c a
 135 - mul c b
-136 - mul a [int]
-137 - mul b [int]
-138 - mul c [int]
+136 - mul a [32]
+137 - mul b [32]
+138 - mul c [32]
 
 140 - div a b
 141 - div a c
@@ -137,13 +157,13 @@ CppVM LTS (v1.5) Final от 18.10.06
 143 - div b c
 144 - div c a
 145 - div c b
-146 - div a [int]
-147 - div b [int]
-148 - div c [int]
+146 - div a [32]
+147 - div b [32]
+148 - div c [32]
 
-150 - and [double]
-151 - or  [double]
-152 - xor [double]
+150 - and [32]	BROKEN
+151 - or  [32]
+152 - xor [32]
 153 - not a
 154 - and b
 155 - or  b
@@ -154,7 +174,7 @@ CppVM LTS (v1.5) Final от 18.10.06
 162 - wipe
 163 - do
 
-190 - rjmp [signed]
+190 - rjmp [signed]	BROKEN?
 191 - rjz  [signed]
 192 - rjnz [signed]
 193 - rjn  [signed]
@@ -192,11 +212,3 @@ asm.py - ассемблер
 mide.py - среда разработки
 cppvm.exe - виртуальная машина
 readme.txt - информация о сборке
-
-____________
-CppVM 2 x32
-[ Версия 1.X->2.0 x32
-[ Регистры 16->16/32 бит
-[ Шина адреса 16->32 бит
-[ Програмный счетчик 16->32 бит
-[ Машинное слово 8->16 бит

@@ -1,4 +1,4 @@
-define beep as call system.beep
+define beep as call system.sound
 
 system:
 wipe
@@ -14,7 +14,7 @@ _sys.exit:
 do
 ret
 
-system.beep:
+system.sound:
 mov a 7
 putc
 ret
