@@ -2,129 +2,121 @@
 #include <stdint.h>
 #include <conio.h>
 #include <fstream>
-#include <cstdlib>
 
-int state = 0; // Костыль, режим VM/MIDE
-uint8_t a,b,c = 0; // Регистры, чё
-uint8_t ram[256]; // Это память
-int i = 0; // Программный счетчик
-int tmp; // Системная переменная для костылей
-bool f[4] = {0,0,0,0}; // Это флаги если что
+#define RAMSIZE 65536
+#define RELJP(NUM) if (NUM > 127) i = i+NUM-256; else i = i + NUM
+
+int state = 0;
+uint8_t a,b,c = 0;
+uint8_t ram[RAMSIZE];
+unsigned short int i = 0;
+int tmp;
+
+//           Z N S S C R R R
+bool f[8] = {0,0,0,0,0,0,0,0};
 
 std::ifstream fin("bios.cvm"); // Чтение файла
 
-// TODO: Gfx[]
-// TODO: File Access
+// TODO: Graphics support?
+// TODO: File Access (Self-Programming?)
+// TODO: Relative jumps
+// TODO: 'MOV' fix
+// TODO: Auto-flags (sub, add, mull, div...)
+// TODO: '%' function
+// TODO: Multifile
 
 int main() {
 
-	std::cout << "CppVM" << std::endl;//v170730+e171221
-	std::cout << "Verion 1.0.0 Fixed Final" << std::endl;
+	std::cout << "CppVM v1.1" << std::endl;//v171222
+	
+	std::cout << "RAM: " << RAMSIZE/1024 << "KB" << std::endl << std::endl;
 
-	while (i < 255) { // erase ram
+	while (i < RAMSIZE-1) { // erase RAM
 		ram[i] = 0;
 		i++;
 	}
-	ram[255] = 255; // чтоб не циклилось
+	ram[RAMSIZE-1] = 255; // чтоб не циклилось
 	i = 0; // pc в ноль
 
 	int buff;
- 	int bc = 0;
+	int bc = 0;
 
-    if (!fin.is_open()) {
-        state = 1;
-        goto d;
-    }
-    else {
-    	while (bc < 255) {
-    		fin >> buff;
-    		ram[bc] = buff;
-    		bc++;
+	if (!fin.is_open()) {
+		state = 1;
+	} else {
+		while (bc < RAMSIZE) {
+			fin >> buff;
+			ram[bc] = buff;
+			bc++;
 		}
-    	fin.close();
+		fin.close();
 	}
 
 	std::cout << "Running" << std::endl;
 
 	while (state == 0) {
-		r:
-
+r:
 		if (ram[i] == 0) {
-		std::cout << "Null" << std::endl;
+			// Do nothing
 		}
-
 		if (ram[i] == 1) {
 			a++;
 		}
-
 		if (ram[i] == 2) {
 			b++;
 		}
-
 		if (ram[i] == 3) {
 			c++;
 		}
-
 		if (ram[i] == 4) {
 			a--;
 		}
-
 		if (ram[i] == 5) {
 			b--;
 		}
-
 		if (ram[i] == 6) {
 			c--;
 		}
-
 		if (ram[i] == 7) {
 			i++;
 			if (a-ram[i] == 0) {
 				f[0] = true;
-			}
-			else {
+			} else {
 				f[0] = false;
 			}
 			if (a-ram[i] < 0) {
 				f[1] = true;
-			}
-			else {
+			} else {
 				f[1] = false;
 			}
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 8) {
 			i++;
-			if (b-ram[i] == 0) {
+			if (a-b == 0) {
 				f[0] = true;
-			}
-			else {
+			} else {
 				f[0] = false;
 			}
-			if (b-ram[i] < 0) {
+			if (a-b < 0) {
 				f[1] = true;
-			}
-			else {
+			} else {
 				f[1] = false;
 			}
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 9) {
 			i++;
-			if (c-ram[i] == 0) {
+			if (a-c == 0) {
 				f[0] = true;
-			}
-			else {
+			} else {
 				f[0] = false;
 			}
-			if (c-ram[i] < 0) {
+			if (a-c < 0) {
 				f[1] = true;
-			}
-			else {
+			} else {
 				f[1] = false;
 			}
 			i++;
@@ -134,166 +126,188 @@ int main() {
 		if (ram[i] == 10) {
 			std::cout << +a;
 		}
-
 		if (ram[i] == 11) {
+			if (a > 127) {
+				std::cout << a-256;
+			}
+			else {
+				std::cout << +a;
+			}
+		}
+		if (ram[i] == 12) {
 			std::cout << a;
 		}
-
-		if (ram[i] == 12) {
+		if (ram[i] == 13) {
 			std::cout << "\n";
 		}
-
-		if (ram[i] == 13) {
+		if (ram[i] == 14) {
 			std::cin >> tmp;
 			a = tmp;
 		}
-
-		if (ram[i] == 14) {
+		if (ram[i] == 15) {
 			a = getch();
 		}
-
-		if (ram[i] == 15) {
+		if (ram[i] == 16) {
 			system("cls");
 		}
-
-		if (ram[i] == 20) {
+		if (ram[i] == 17) {
 			i = 0;
 			goto r;
 		}
-
-		if (ram[i] == 21) {
+		if (ram[i] == 20) {
 			i++;
-			i = ram[i];
+			i = ram[i]*256+ram[i+1];
 			goto r;
 		}
-
-		if (ram[i] == 22) {
+		if (ram[i] == 21) {
 			if (f[0]) {
 				i++;
-				i = ram[i];
+				i = ram[i]*256+ram[i+1];
 				goto r;
 			}
-			i=i+2;
+			i=i+3;
 			goto r;
 		}
-
-		if (ram[i] == 23) {
+		if (ram[i] == 22) {
 			if (!f[0]) {
 				i++;
-				i = ram[i];
+				i = ram[i]*256+ram[i+1];
 				goto r;
 			}
-			i=i+2;
+			i=i+3;
 			goto r;
 		}
-
-		if (ram[i] == 24) {
+		if (ram[i] == 23) {
 			if (f[1]) {
 				i++;
-				i = ram[i];
+				i = ram[i]*256+ram[i+1];
 				goto r;
 			}
-			i=i+2;
+			i=i+3;
 			goto r;
 		}
-
-		if (ram[i] == 25) {
+		if (ram[i] == 24) {
 			if (!f[1]) {
 				i++;
-				i = ram[i];
+				i = ram[i]*256+ram[i+1];
 				goto r;
 			}
-			i=i+2;
+			i=i+3;
 			goto r;
 		}
-
-		if (ram[i] == 30) {
+		if (ram[i] == 25) {
+			i++;
+			i = b*256+c;
+			goto r;
+		}
+		if (ram[i] == 26) {
+			if (f[0]) {
+				i++;
+				i = b*256+c;
+				goto r;
+			}
+			i++;
+			goto r;
+		}
+		if (ram[i] == 27) {
+			if (!f[0]) {
+				i++;
+				i = b*256+c;
+				goto r;
+			}
+			i++;
+			goto r;
+		}
+		if (ram[i] == 28) {
+			if (f[1]) {
+				i++;
+				i = b*256+c;
+				goto r;
+			}
+			i++;
+			goto r;
+		}
+		if (ram[i] == 29) {
+			if (!f[1]) {
+				i++;
+				i = b*256+c;
+				goto r;
+			}
+			i++;
+			goto r;
+		}
+		if (ram[i] == 40) {
 			a = b;
 		}
-
-		if (ram[i] == 31) {
+		if (ram[i] == 41) {
 			a = c;
 		}
-
-		if (ram[i] == 32) {
+		if (ram[i] == 42) {
 			b = a;
 		}
-
-		if (ram[i] == 33) {
+		if (ram[i] == 43) {
 			b = c;
 		}
-
-		if (ram[i] == 34) {
+		if (ram[i] == 44) {
 			c = a;
 		}
-
-		if (ram[i] == 35) {
+		if (ram[i] == 45) {
 			c = b;
 		}
-
-		if (ram[i] == 40) {
+		if (ram[i] == 46) {
 			i++;
 			a=ram[i];
 			i++;
 			goto r;
 		}
-
-		if (ram[i] == 41) {
+		if (ram[i] == 47) {
 			i++;
 			b=ram[i];
 			i++;
 			goto r;
 		}
-
-		if (ram[i] == 42) {
+		if (ram[i] == 48) {
 			i++;
 			c=ram[i];
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 50) {
 			i++;
 			a=ram[ram[i]];
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 51) {
 			i++;
 			b=ram[ram[i]];
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 52) {
 			i++;
 			c=ram[ram[i]];
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 53) {
 			i++;
 			ram[ram[i]] = a;
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 54) {
 			i++;
 			ram[ram[i]] = b;
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 55) {
 			i++;
 			ram[ram[i]] = c;
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 60) {
 			a=a+b;
 		}
@@ -330,7 +344,6 @@ int main() {
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 70) {
 			a=a-b;
 		}
@@ -367,7 +380,6 @@ int main() {
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 80) {
 			a=a*b;
 		}
@@ -404,7 +416,6 @@ int main() {
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 90) {
 			a=a/b;
 		}
@@ -441,23 +452,19 @@ int main() {
 			i++;
 			goto r;
 		}
-
 		if (ram[i] == 250) {
 			f[2] = true;
 		}
-
 		if (ram[i] == 251) {
 			f[3] = true;
 		}
-
 		if (ram[i] == 255) {
 			if (!f[2]) {
 				std::cout << std::endl << "End" << std::endl;
 			}
 			if (f[3]) {
 				state = 2;
-			}
-			else {
+			} else {
 				state = 1;
 			}
 		}
@@ -465,7 +472,7 @@ int main() {
 		i++;
 	}
 
-	d:
+d:
 	if (state == 1) {
 		i = 0;
 		a = 0;
@@ -496,96 +503,6 @@ int main() {
 			}
 			i++;
 		}
+		std::cin.get();
 	}
-	std::cout << std::endl;
-	std::cin.get();
 }
-
-
-// 0 - Null
-// 1 - inc a
-// 2 - inc b
-// 3 - inc c
-// 4 - dec a
-// 5 - dec b
-// 6 - dec c
-// 7 - cmp a,[int]
-// 8 - cmp b,[int]
-// 9 - cmp c,[int]
-
-// 10 - cout
-// 11 - couts
-// 12 - cnl
-// 13 - cin
-// 14 - getch
-// 15 - cls
-
-// 20 - rst
-// 21 - jmp [int]
-// 22 - jz [int]
-// 23 - jnz [int]
-// 24 - jn [int]
-// 25 - jp [int]
-
-// 30 - mov a,b
-// 31 - mov a,c
-// 32 - mov b,a
-// 33 - mov b,c
-// 34 - mov c,a
-// 35 - mov c,b
-
-// 40 - mov a,[int]
-// 41 - mov b,[int]
-// 42 - mov c,[int]
-
-// 50 - mov a,[addr]
-// 51 - mov b,[addr]
-// 52 - mov c,[addr]
-// 53 - mov [addr],a
-// 54 - mov [addr],b
-// 55 - mov [addr],c
-
-// 60 - add a,b
-// 61 - add a,c
-// 62 - add b,a
-// 63 - add b,c
-// 64 - add c,a
-// 65 - add c,b
-// 66 - add a,[int]
-// 67 - add b,[int]
-// 68 - add c,[int]
-
-// 70 - sub a,b
-// 71 - sub a,c
-// 72 - sub b,a
-// 73 - sub b,c
-// 74 - sub c,a
-// 75 - sub c,b
-// 76 - sub a,[int]
-// 77 - sub b,[int]
-// 78 - sub c,[int]
-
-// 80 - mul a,b
-// 81 - mul a,c
-// 82 - mul b,a
-// 83 - mul b,c
-// 84 - mul c,a
-// 85 - mul c,b
-// 86 - mul a,[int]
-// 87 - mul b,[int]
-// 88 - mul c,[int]
-
-// 90 - div a,b
-// 91 - div a,c
-// 92 - div b,a
-// 93 - div b,c
-// 94 - div c,a
-// 95 - div c,b
-// 96 - div a,[int]
-// 97 - div b,[int]
-// 98 - div c,[int]
-
-
-// 250 - endf
-// 251 - idef
-// 255 - ret
