@@ -26,6 +26,5 @@ string:
 0
 
 exit:
-noinf
 cin
 ret

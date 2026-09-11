@@ -9,5 +9,4 @@ exit:
 mov8 a 3
 putc
 cin
-noinf
 ret

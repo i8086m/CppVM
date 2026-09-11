@@ -43,6 +43,8 @@ for i in coms:
 print('Preparing...')
 asm = asm + ' '
 asm = asm.replace('\t','')
+asm = asm.replace('{','')
+asm = asm.replace('}','ret')
 
 print('Preprocessing...')
 coms = asm.split('\n')
@@ -68,6 +70,30 @@ for i in coms:
 		print()
 		input()
 
+coms = asm.split('\n')
+funcs = []
+for i in coms:
+	if (i.startswith('function')):
+		a = i.split(' ')
+		b=''
+		for x in range(int(a[2])):
+			b+= str(a[1])+'_var'+str(x)+': 0\n'
+		b+=str(a[1])+':'
+		funcs.append(str(a[1]))
+		asm = asm.replace(i, b)
+
+for i in coms:
+	for x in funcs:
+		if (x in i):
+			b = i.lstrip(str(x))
+			if (b.startswith('(') and b.endswith(')')):
+				b=b[1:-1].replace(' ','').split(',')
+				c=''
+				for ind, d in enumerate(b):
+					if (d!=''):
+						c+= 'mov c ' + b[ind] + '\nwr c '+str(x)+'_var'+str(ind)+'\n'
+				c+='call '+str(x)+'\n'
+				asm = asm.replace(i,c)
 
 print('Removing comments...')
 coms = asm.split('\n')
@@ -136,7 +162,6 @@ for ind, i in enumerate(coms):
 				if (d):
 					e = str(int(d)//256) + ' ' + str(int(d)%256)
 					asm = asm.replace(i+'\n',i.replace(d,e)+'\n')
-
 
 print('Assembling...')
 doCount = 2
@@ -291,32 +316,29 @@ while (doCount > 0):
 	asm = asm.replace(' wipe ',' 162 ')
 	asm = asm.replace(' do ',' 163 ')
 
-	asm = asm.replace(' noinf ',' 250 ')
+	asm = asm.replace(' inf ',' 250 ')
 	asm = asm.replace(' debug ',' 251 ')
-	asm = asm.replace(' debug-slow ',' 252 ')
-	asm = asm.replace(' nodebug ',' 253 ')
+	asm = asm.replace(' nodebug ',' 252 ')
 	asm = asm.replace(' ret ',' 255 ')
 
 
 print('Calculating labels...')
 out = asm.split(' ')
 out = list(filter(None, out))
-
 lbln = []
 lbli = []
+
 for ind, com in enumerate(out): # запись в массив информации о метках (место, имя)
 	if com.endswith(':'):
 		lab = out[ind].replace(':','')
 		lbln.append(str(lab))
 		lbli.append(str(ind))
-
 for ind, com in enumerate(out): # добавить второй байт к каждой метке
 	for nam in lbln:
-		if com in nam:
+		if com == nam:
 			out.insert(ind+1,'000')
 lbln = []
 lbli = []
-
 for ind, com in enumerate(out): # удаление инициализаторов меток
 	if com.endswith(':'):
 		lab = out[ind].replace(':','')
