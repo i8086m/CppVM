@@ -1,6 +1,16 @@
 print('Opening files...')
-f_in = open('bios.asm')
 f_out = open('bios.cvm', 'w')
+try:
+    f_in = open('bios.asm')
+except:
+    print('\n-----------------------------------------------')
+    print('Assemble failed. Source file not found')
+    print('-----------------------------------------------\n')
+    cvm = '255\nAssemble Failed\nerr: unableToFindSource(bios.asm)'
+    f_out.write(cvm)
+    f_out.close()
+    exit()
+
 labels = []
 lbln = []
 lbli = []
@@ -8,6 +18,27 @@ errors = ''
 cvm = ''
 print('Reading...')
 asm = f_in.read()
+
+print('Collecting modules...')
+coms = asm.split('\n')
+for i in coms:
+    if (str(i).startswith('import ')):
+        asm = asm.replace(i,'')
+        i = str(i)[7:]
+        i = 'modules/'+i+'.asm'
+        try:
+            mod_in = open(i)
+            mod_dat = mod_in.read()
+            asm = asm + '\n' + mod_dat
+        except:
+            print('\n-----------------------------------------------')
+            print('Assemble failed. Module ' + i + ' is not installed')
+            print('-----------------------------------------------\n')
+            cvm = '255\nAssemble Failed\nerr: unableToFindModule(' + i + ')'
+            f_out.write(cvm)
+            f_out.close()
+            exit()
+
 print('Assembling...')
 asm = asm + ' '
 asm = asm.lower()
@@ -34,26 +65,26 @@ asm = asm.replace('  ',' ')
 asm = asm.replace('  ',' ')
 asm = asm.replace('\n',' ')
 
-asm = asm.replace('nop','0')
-asm = asm.replace('inc a','1')
-asm = asm.replace('inc b','2')
-asm = asm.replace('inc c','3')
-asm = asm.replace('dec a','4')
-asm = asm.replace('dec b','5')
-asm = asm.replace('dec c','6')
-asm = asm.replace('cmp b','8')
-asm = asm.replace('cmp c','9')
+asm = asm.replace('nop ','0 ')
+asm = asm.replace('inc a ','1 ')
+asm = asm.replace('inc b ','2 ')
+asm = asm.replace('inc c ','3 ')
+asm = asm.replace('dec a ','4 ')
+asm = asm.replace('dec b ','5 ')
+asm = asm.replace('dec c ','6 ')
+asm = asm.replace('cmp b ','8 ')
+asm = asm.replace('cmp c ','9 ')
 asm = asm.replace('cmp ','7 ')
 
-asm = asm.replace('puts','11')
-asm = asm.replace('putc','12')
-asm = asm.replace('put','10')
-asm = asm.replace('endl','13')
-asm = asm.replace('cin','14')
-asm = asm.replace('getkey','15')
-asm = asm.replace('cls','16')
-asm = asm.replace('rst','17')
-asm = asm.replace('exch','18')
+asm = asm.replace('puts ','11 ')
+asm = asm.replace('putc ','12 ')
+asm = asm.replace('put ','10 ')
+asm = asm.replace('endl ','13 ')
+asm = asm.replace('cin ','14 ')
+asm = asm.replace('getkey ','15 ')
+asm = asm.replace('cls ','16 ')
+asm = asm.replace('rst ','17 ')
+asm = asm.replace('exch ','18 ')
 asm = asm.replace('call ','19 ')
 
 asm = asm.replace('rjmp с ','195 ')
@@ -162,7 +193,6 @@ asm = asm.replace('div c ','148 ')
 asm = asm.replace('noinf ','250 ')
 asm = asm.replace('debug ','251 ')
 asm = asm.replace('ret ','255 ')
-
 print('Calculating labels...')
 
 out = asm.split(' ')
@@ -177,7 +207,6 @@ for ind, com in enumerate(out):
         lbln.append(str(lab))
         lbli.append(str(labi))
         
-
 for ind, com in enumerate(out):
     for nam in lbln:
         if com in nam:
@@ -192,7 +221,6 @@ for ind, com in enumerate(out):
         del out[ind]
         lbln.append(str(lab))
         lbli.append(str(labi))
-
 
 for ind, nam in enumerate(lbln):
     for indc, com in enumerate(out):
@@ -239,7 +267,10 @@ if count != 0:
     print('\n-----------------------------------------------')
     print('Assemble failed. Unknown command: ' + errors)
     print('-----------------------------------------------\n')
-    cvm = '255\nAssemble Failed'
+    cvm = '255\nAssemble Failed\nerr: unknownCommand(' + errors + ')'
+    f_out.write(cvm)
+    f_out.close()
+    exit()
 else:
     print('\n---------------------')
     print('Assemble completed.')

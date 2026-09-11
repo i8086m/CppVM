@@ -8,6 +8,7 @@
 
 #define RAMSIZE 65536
 #define RELJP(NUM) if (NUM > 127) i = i+NUM-256; else i = i + NUM
+// long relative jump here
 
 int state = 0;
 uint8_t ram[RAMSIZE];
@@ -62,7 +63,7 @@ int main() {
 	}
 	bc--;
 	if (f_msg) {
-		std::cout << "CppVM v1.2.3" << std::endl;//v171224
+		std::cout << "CppVM v1.2.4" << std::endl;//v171224
 		if (RAMSIZE >= 1024) {
 			std::cout << "RAM: " << RAMSIZE/1024 << "kb" << std::endl << std::endl;
 		} else {
