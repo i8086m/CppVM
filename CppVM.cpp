@@ -4,14 +4,15 @@
 #include <fstream>
 
 #define RAMSIZE 65536
-#define RELJP(NUM) if (NUM > 127) i = i+NUM-256; else i = i + NUM
+#define RELJP(NUM) if (NUM > 127) i = i+NUM-65536; else i = i + NUM
 
 int state = 0;
-uint8_t a,b,c = 0;
-uint8_t ta,tb,tc,na,nb,nc = 0;
 uint8_t ram[RAMSIZE];
-short int sp = 0;
-unsigned short int stack[4] = {0,0,0,0};
+uint8_t prnt;
+unsigned short int a,b,c,d,e = 0;
+unsigned short int ta,tb,tc,na,nb,nc = 0;
+unsigned short int sp = 0;
+unsigned short int stack[32];
 unsigned short int i = 0;
 int tmp;
 
@@ -21,16 +22,15 @@ bool f[8] = {0,0,0,0,0,0,0,0};
 std::ifstream fin("bios.cvm"); // Чтение файла
 
 // TODO: Graphics support?
-// TODO: File Access (Self-Programming?)
 // TODO: Auto-flags (sub, add, mull, div...)
 // TODO: '%' function
 // TODO: Multifile
 // TODO: Enchance assembler output
-// TODO: ASM 30-39
+// TODO: RELATIVE (AGAIN)
 
 int main() {
 
-	std::cout << "CppVM v1.1.2" << std::endl;//v171223
+	std::cout << "CppVM v1.2.0" << std::endl;//v171224
 
 	std::cout << "RAM: " << RAMSIZE/1024 << "KB" << std::endl << std::endl;
 
@@ -127,17 +127,24 @@ r:
 		}
 
 		if (ram[i] == 10) {
-			std::cout << +a;
+			std::cout << a;
 		}
 		if (ram[i] == 11) {
-			if (a > 127) {
-				std::cout << a-256;
+			if (a > 32767) {
+				std::cout << a-65536;
 			} else {
-				std::cout << +a;
+				std::cout << a;
 			}
 		}
 		if (ram[i] == 12) {
-			std::cout << a;
+			//std::cout << a << std::endl;
+			if (a < 256) {
+				char ch;
+				//std::cout << a;
+				ch = (char)a;
+				std::cout << ch;
+			}
+			
 		}
 		if (ram[i] == 13) {
 			std::cout << "\n";
@@ -166,6 +173,7 @@ r:
 			na = ta;
 			nb = tb;
 			nc = tc;
+			i++;
 			goto r;
 		}
 		if (ram[i] == 19) {
@@ -218,356 +226,366 @@ r:
 		}
 		if (ram[i] == 25) {
 			i++;
-			i = b*256+c;
+			i = c;
 			goto r;
 		}
 		if (ram[i] == 26) {
 			if (f[0]) {
 				i++;
-				i = b*256+c;
+				i = c;
 				goto r;
 			}
-			i++;
+			i=i+2;
 			goto r;
 		}
 		if (ram[i] == 27) {
 			if (!f[0]) {
 				i++;
-				i = b*256+c;
+				i = c;
 				goto r;
 			}
-			i++;
+			i=i+2;
 			goto r;
 		}
 		if (ram[i] == 28) {
 			if (f[1]) {
 				i++;
-				i = b*256+c;
+				i = c;
 				goto r;
 			}
-			i++;
+			i=i+2;
 			goto r;
 		}
 		if (ram[i] == 29) {
 			if (!f[1]) {
 				i++;
-				i = b*256+c;
+				i = c;
 				goto r;
 			}
-			i++;
+			i=i+2;
 			goto r;
 		}
 		if (ram[i] == 30) {
-			i++;
-			RELJP(ram[i]);
-			goto r;
-		}
-		if (ram[i] == 31) {
-			if (f[0]) {
-				i++;
-				RELJP(ram[i]);
-				goto r;
-			}
-			i=i+3;
-			goto r;
-		}
-		if (ram[i] == 32) {
-			if (!f[0]) {
-				i++;
-				RELJP(ram[i]);
-				goto r;
-			}
-			i=i+3;
-			goto r;
-		}
-		if (ram[i] == 33) {
-			if (f[1]) {
-				i++;
-				RELJP(ram[i]);
-				goto r;
-			}
-			i=i+3;
-			goto r;
-		}
-		if (ram[i] == 34) {
-			if (!f[1]) {
-				i++;
-				RELJP(ram[i]);
-				goto r;
-			}
-			i=i+3;
-			goto r;
-		}
-		if (ram[i] == 35) {
-			i++;
-			RELJP(c);
-			goto r;
-		}
-		if (ram[i] == 36) {
-			if (f[0]) {
-				i++;
-				RELJP(c);
-				goto r;
-			}
-			i++;
-			goto r;
-		}
-		if (ram[i] == 37) {
-			if (!f[0]) {
-				i++;
-				RELJP(c);
-				goto r;
-			}
-			i++;
-			goto r;
-		}
-		if (ram[i] == 38) {
-			if (f[1]) {
-				i++;
-				RELJP(c);
-				goto r;
-			}
-			i++;
-			goto r;
-		}
-		if (ram[i] == 39) {
-			if (!f[1]) {
-				i++;
-				RELJP(c);
-				goto r;
-			}
-			i++;
-			goto r;
-		}
-		if (ram[i] == 40) {
 			a = b;
 		}
-		if (ram[i] == 41) {
+		if (ram[i] == 31) {
 			a = c;
 		}
-		if (ram[i] == 42) {
+		if (ram[i] == 32) {
 			b = a;
 		}
-		if (ram[i] == 43) {
+		if (ram[i] == 33) {
 			b = c;
 		}
-		if (ram[i] == 44) {
+		if (ram[i] == 34) {
 			c = a;
 		}
-		if (ram[i] == 45) {
+		if (ram[i] == 35) {
 			c = b;
 		}
-		if (ram[i] == 46) {
+		
+		if (ram[i] == 40) {
 			i++;
 			a=ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 47) {
+		if (ram[i] == 41) {
 			i++;
 			b=ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 48) {
+		if (ram[i] == 42) {
 			i++;
 			c=ram[i];
 			i++;
 			goto r;
 		}
+		if (ram[i] == 43) {
+			i++;
+			a=ram[i]*256+ram[i+1];
+			i=i+2;
+			goto r;
+		}
+		if (ram[i] == 44) {
+			i++;
+			b=ram[i]*256+ram[i+1];
+			i=i+2;
+			goto r;
+		}
+		if (ram[i] == 45) {
+			i++;
+			c=ram[i]*256+ram[i+1];
+			i=i+2;
+			goto r;
+		}
 		if (ram[i] == 50) {
 			i++;
 			a=ram[ram[i]*256+ram[i+1]];
-			i++;
+			i=i+2;
 			goto r;
 		}
 		if (ram[i] == 51) {
 			i++;
 			b=ram[ram[i]*256+ram[i+1]];
-			i++;
+			i=i+2;
 			goto r;
 		}
 		if (ram[i] == 52) {
 			i++;
 			c=ram[ram[i]*256+ram[i+1]];
-			i++;
+			i=i+2;
 			goto r;
 		}
 		if (ram[i] == 53) {
 			i++;
 			ram[ram[i]*256+ram[i+1]] = a;
-			i++;
+			i=i+2;
 			goto r;
 		}
 		if (ram[i] == 54) {
 			i++;
 			ram[ram[i]*256+ram[i+1]] = b;
-			i++;
+			i=i+2;
 			goto r;
 		}
 		if (ram[i] == 55) {
 			i++;
 			ram[ram[i]*256+ram[i+1]] = c;
-			i++;
-			goto r;
-		}
-		if (ram[i] == 56) {
-			i++;
-			a = ram[b*256+c];
-			goto r;
-		}
-		if (ram[i] == 57) {
-			i++;
-			ram[b*256+c] = a;
-			goto r;
-		}
-		if (ram[i] == 58) {
-			i++;
-			b = ram[i];
-			i++;
-			c = ram[i];
-			i++;
+			i=i+2;
 			goto r;
 		}
 		if (ram[i] == 60) {
-			a=a+b;
+			i++;
+			a = ram[a];
+			goto r;
 		}
 		if (ram[i] == 61) {
-			a=a+c;
+			i++;
+			a = ram[b];
+			goto r;
 		}
 		if (ram[i] == 62) {
-			b=b+a;
+			i++;
+			a = ram[c];
+			goto r;
 		}
 		if (ram[i] == 63) {
-			b=b+c;
+			i++;
+			b = ram[a];
+			goto r;
 		}
 		if (ram[i] == 64) {
-			c=c+a;
+			i++;
+			b = ram[b];
+			goto r;
 		}
 		if (ram[i] == 65) {
-			c=c+b;
+			i++;
+			b = ram[c];
+			goto r;
 		}
 		if (ram[i] == 66) {
+			i++;
+			c = ram[a];
+			goto r;
+		}
+		if (ram[i] == 67) {
+			i++;
+			c = ram[b];
+			goto r;
+		}
+		if (ram[i] == 68) {
+			i++;
+			c = ram[c];
+			goto r;
+		}
+		
+		if (ram[i] == 70) {
+			i++;
+			ram[a] = a;
+			goto r;
+		}
+		if (ram[i] == 71) {
+			i++;
+			ram[b] = a;
+			goto r;
+		}
+		if (ram[i] == 72) {
+			i++;
+			ram[c] = a;
+			goto r;
+		}
+		if (ram[i] == 73) {
+			i++;
+			ram[a] = b;
+			goto r;
+		}
+		if (ram[i] == 74) {
+			i++;
+			ram[b] = b;
+			goto r;
+		}
+		if (ram[i] == 75) {
+			i++;
+			ram[c] = b;
+			goto r;
+		}
+		if (ram[i] == 76) {
+			i++;
+			ram[a] = c;
+			goto r;
+		}
+		if (ram[i] == 77) {
+			i++;
+			ram[b] = c;
+			goto r;
+		}
+		if (ram[i] == 78) {
+			i++;
+			ram[c] = c;
+			goto r;
+		}
+		if (ram[i] == 110) {
+			a=a+b;
+		}
+		if (ram[i] == 111) {
+			a=a+c;
+		}
+		if (ram[i] == 112) {
+			b=b+a;
+		}
+		if (ram[i] == 113) {
+			b=b+c;
+		}
+		if (ram[i] == 114) {
+			c=c+a;
+		}
+		if (ram[i] == 115) {
+			c=c+b;
+		}
+		if (ram[i] == 116) {
 			i++;
 			a=a+ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 67) {
+		if (ram[i] == 117) {
 			i++;
 			b=b+ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 68) {
+		if (ram[i] == 118) {
 			i++;
 			c=c+ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 70) {
+		if (ram[i] == 120) {
 			a=a-b;
 		}
-		if (ram[i] == 71) {
+		if (ram[i] == 121) {
 			a=a-c;
 		}
-		if (ram[i] == 72) {
+		if (ram[i] == 122) {
 			b=b-a;
 		}
-		if (ram[i] == 73) {
+		if (ram[i] == 123) {
 			b=b-c;
 		}
-		if (ram[i] == 74) {
+		if (ram[i] == 124) {
 			c=c-a;
 		}
-		if (ram[i] == 75) {
+		if (ram[i] == 125) {
 			c=c-b;
 		}
-		if (ram[i] == 76) {
+		if (ram[i] == 126) {
 			i++;
 			a=a-ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 77) {
+		if (ram[i] == 127) {
 			i++;
 			b=b-ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 78) {
+		if (ram[i] == 128) {
 			i++;
 			c=c-ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 80) {
+		if (ram[i] == 130) {
 			a=a*b;
 		}
-		if (ram[i] == 81) {
+		if (ram[i] == 131) {
 			a=a*c;
 		}
-		if (ram[i] == 82) {
+		if (ram[i] == 132) {
 			b=b*a;
 		}
-		if (ram[i] == 83) {
+		if (ram[i] == 133) {
 			b=b*c;
 		}
-		if (ram[i] == 84) {
+		if (ram[i] == 134) {
 			c=c*a;
 		}
-		if (ram[i] == 85) {
+		if (ram[i] == 135) {
 			c=c*b;
 		}
-		if (ram[i] == 86) {
+		if (ram[i] == 136) {
 			i++;
 			a=a*ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 87) {
+		if (ram[i] == 137) {
 			i++;
 			b=b*ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 88) {
+		if (ram[i] == 138) {
 			i++;
 			c=c*ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 90) {
+		if (ram[i] == 140) {
 			a=a/b;
 		}
-		if (ram[i] == 91) {
+		if (ram[i] == 141) {
 			a=a/c;
 		}
-		if (ram[i] == 92) {
+		if (ram[i] == 142) {
 			b=b/a;
 		}
-		if (ram[i] == 93) {
+		if (ram[i] == 143) {
 			b=b/c;
 		}
-		if (ram[i] == 94) {
+		if (ram[i] == 144) {
 			c=c/a;
 		}
-		if (ram[i] == 95) {
+		if (ram[i] == 145) {
 			c=c/b;
 		}
-		if (ram[i] == 96) {
+		if (ram[i] == 146) {
 			i++;
 			a=a/ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 97) {
+		if (ram[i] == 147) {
 			i++;
 			b=b/ram[i];
 			i++;
 			goto r;
 		}
-		if (ram[i] == 98) {
+		if (ram[i] == 148) {
 			i++;
 			c=c/ram[i];
 			i++;

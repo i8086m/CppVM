@@ -4,8 +4,8 @@
 
 Ошибки:
 - Не устанавливаются флаги при вычислении (решение - использовать cmp)
-- ? Ассемблер не поддерживает комманды 30-39
-- Серьезные ошибки ассемблера
+- Ошибки ассемблера
+- ? Нет относительных переходов
 
 Команды:
 
@@ -28,41 +28,35 @@
 15 - getkey
 16 - cls
 17 - rst
-18 - ex
+18 - exch
 19 - call
 
-20 - jmp [addrH],[addrL]
-21 - jz  [addrH],[addrL]
-22 - jnz [addrH],[addrL]
-23 - jn  [addrH],[addrL]
-24 - jp  [addrH],[addrL]
-25 - jmp bc
-26 - jz  bc
-27 - jnz bc
-28 - jn  bc
-29 - jp  bc
+20 - jmp [double]
+21 - jz  [double]
+22 - jnz [double]
+23 - jn  [double]
+24 - jp  [double]
+25 - jmp c
+26 - jz  c
+27 - jnz c
+28 - jn  c
+29 - jp  c
 
 
-30 - rjmp [signed]
-31 - rjz  [signed]
-32 - rjnz [signed]
-33 - rjn  [signed]
-34 - rjp  [signed]
-35 - rjmp c
-36 - rjz  c
-37 - rjnz c
-38 - rjn  c
-39 - rjp  c
+30 - mov a,b
+31 - mov a,c
+32 - mov b,a
+33 - mov b,c
+34 - mov c,a
+35 - mov c,b
 
-40 - mov a,b
-41 - mov a,c
-42 - mov b,a
-43 - mov b,c
-44 - mov c,a
-45 - mov c,b
-46 - mov a,[int]
-47 - mov b,[int]
-48 - mov c,[int]
+40 - mov8 a,[int]
+41 - mov8 b,[int]
+42 - mov8 c,[int]
+43 - mov  a [double]
+44 - mov  b [double]
+45 - mov  c [double]
+
 
 50 - ld a,(addr)
 51 - ld b,(addr)
@@ -70,49 +64,66 @@
 53 - wr a,(addr)
 54 - wr b,(addr)
 55 - wr c,(addr)
-56 - ld a,(bc)
-57 - wr (a), bc
-58 - ld bc,[double]
 
-60 - add a,b
-61 - add a,c
-62 - add b,a
-63 - add b,c
-64 - add c,a
-65 - add c,b
-66 - add a,[int]
-67 - add b,[int]
-68 - add c,[int]
+60 - ld a (a)
+61 - ld a (b)
+62 - ld a (c)
+63 - ld b (a)
+64 - ld b (b)
+65 - ld b (c)
+66 - ld c (a)
+67 - ld c (b)
+68 - ld c (c)
 
-70 - sub a,b
-71 - sub a,c
-72 - sub b,a
-73 - sub b,c
-74 - sub c,a
-75 - sub c,b
-76 - sub a,[int]
-77 - sub b,[int]
-78 - sub c,[int]
+70 - wr a (a)
+71 - wr a (b)
+72 - wr a (c)
+73 - wr b (a)
+74 - wr b (b)
+75 - wr b (c)
+76 - wr c (a)
+77 - wr c (b)
+78 - wr c (c)
 
-80 - mul a,b
-81 - mul a,c
-82 - mul b,a
-83 - mul b,c
-84 - mul c,a
-85 - mul c,b
-86 - mul a,[int]
-87 - mul b,[int]
-88 - mul c,[int]
+110 - add a,b
+111 - add a,c
+112 - add b,a
+113 - add b,c
+114 - add c,a
+115 - add c,b
+116 - add a,[int]
+117 - add b,[int]
+118 - add c,[int]
 
-90 - div a,b
-91 - div a,c
-92 - div b,a
-93 - div b,c
-94 - div c,a
-95 - div c,b
-96 - div a,[int]
-97 - div b,[int]
-98 - div c,[int]
+120 - sub a,b
+121 - sub a,c
+122 - sub b,a
+123 - sub b,c
+124 - sub c,a
+125 - sub c,b
+126 - sub a,[int]
+127 - sub b,[int]
+128 - sub c,[int]
+
+130 - mul a,b
+131 - mul a,c
+132 - mul b,a
+133 - mul b,c
+134 - mul c,a
+135 - mul c,b
+136 - mul a,[int]
+137 - mul b,[int]
+138 - mul c,[int]
+
+140 - div a,b
+141 - div a,c
+142 - div b,a
+143 - div b,c
+144 - div c,a
+145 - div c,b
+146 - div a,[int]
+147 - div b,[int]
+148 - div c,[int]
 
 
 250 - dbg

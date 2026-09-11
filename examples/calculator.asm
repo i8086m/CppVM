@@ -1,49 +1,49 @@
 cls
 
-mov a 16
+mov8 a 16
 putc
 
-mov a 32
+mov8 a 32
 putc
 
-mov a 67
+mov8 a 67
 putc
-mov a 97
+mov8 a 97
 putc
-mov a 108
+mov8 a 108
 putc
-mov a 99
-putc
-
-mov a 32
+mov8 a 99
 putc
 
-mov a 17
+mov8 a 32
+putc
+
+mov8 a 17
 putc
 
 endl
 
-mov a 65
+mov8 a 65
 putc
-mov a 58
+mov8 a 58
 putc
 
 cin
 mov b a
 
-mov a 79
+mov8 a 79
 putc
-mov a 112
+mov8 a 112
 putc
-mov a 58
+mov8 a 58
 putc
 
 cin
 wr a 0 240
 
-mov a 66
+mov8 a 66
 putc
-mov a 58
+mov8 a 58
 putc
 
 cin
@@ -64,28 +64,25 @@ jmp KON
 lbl_SUM
 add b c
 mov a b
-put
 jmp KON
 
 lbl_SUB
 sub b c
 mov a b
-put
 jmp KON
 
 lbl_MUL
 mul b c
 mov a b
-put
 jmp KON
 
 lbl_DIV
 div b c
 mov a b
-put
 jmp KON
 
 lbl_KON
+puts
 endl
 getkey
 jmp 0 0

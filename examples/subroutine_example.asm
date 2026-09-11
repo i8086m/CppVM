@@ -12,7 +12,7 @@ cls
 ret
 
 lbl_LOAD
-mov a 5
+mov8 a 5
 ret
 
 lbl_PRNT

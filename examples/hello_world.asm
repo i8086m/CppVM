@@ -1,20 +1,21 @@
 cls
-ld bc DB1
-lbl_RB
-ld a bc
+mov c string
+
+lbl_loop
+ld a (c)
 putc
 inc c
 cmp *!
-jz STP
-jmp RB
+jz exit
+jmp loop
 
-lbl_DB1
+lbl_string
 *h
 *e
 *l
 *l
 *o
-32
+*,
 *w
 *o
 *r
@@ -22,7 +23,7 @@ lbl_DB1
 *d
 *!
 
-lbl_STP
+lbl_EXIT
 dbg
 ide
 cin
