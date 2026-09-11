@@ -43,3 +43,62 @@ ret
 ; TODO:
 ; cpystr(a,b)
 ; cmpstr(a,b)
+; isdigit(a)
+; getword
+; alloc (memory.asm?)
+
+; cmpstr(a,b)
+; сравнивает строки по адресам a и b
+cmpstr:
+	wr a _strings_addr0
+	wr b _strings_addr1
+	ld b _strings_addr0
+	mov c 0
+	_lenchk0:
+		ld a b
+		cmp 0
+		inc c
+		inc b
+		jnz _lenchk0
+	push c
+	ld b _strings_addr1
+	mov c 0
+	_lenchk1:
+		ld a b
+		cmp 0
+		inc c
+		inc b
+		jnz _lenchk1
+	mov a c
+	pop b
+	cmp b
+	jz _cmp_step2
+	mov a 0
+ret
+
+_cmp_step2:
+	dec a
+	mov c 0	; counter
+	_cmp_loop2:
+		ld a _strings_addr0
+		ld b _strings_addr1
+		add a c
+		add b c
+		inc c
+		ld a a
+		ld b b
+		cmp b
+		jnz _cmp_exit0
+		cmp 0
+		jnz _cmp_loop2
+	mov a 1
+ret
+
+_cmp_exit0:
+	mov a 0
+	; endl put put put
+	ret
+ret
+
+_strings_addr0: 0
+_strings_addr1: 0

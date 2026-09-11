@@ -1,17 +1,21 @@
-function main 0 {
+def main 0
 	mov a 11
-	test(a, 22, 33)
+	test a 22 33
 	cin
-}
+ret
 
-function test 3 {
-	ld a test_var0
+def test 3
+
+	endl
 	put
 	endl
-	ld a test_var1
+	
+	mov a b
 	put
 	endl
-	ld a test_var2
+	
+	mov a c
 	put
 	endl
-}
+	
+ret

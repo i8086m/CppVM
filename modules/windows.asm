@@ -1,39 +1,28 @@
-function setPos 2{
-	ld a setPos_var0
-	ld b setPos_var0
+def setPos 2
 	301
-}
+ret
 
-function clrDraw 0 {
+def clrDraw 0
 	mov a 3
 	302
-}
+ret
 
-function gfxMode 0 {
+def gfxMode 0
 	303
-}
+ret
 
-function setColor 3 {
-	ld a setColor_var0
-	ld b setColor_var1
-	ld c setColor_var2
+def setColor 3
 	304
-}
+ret
 
-function pxlOn 2 {
-	ld a pxlOn_var0
-	ld b pxlOn_var1
+def pxlOn 2
 	305
-}
+ret
 
-function moveTo 2 {
-	ld a moveTo_var0
-	ld b moveTo_var1
+def moveTo 2
 	306
-}
+ret
 
-function lineTo 2 {
-	ld a lineTo_var0
-	ld b lineTo_var1
+def lineTo 2
 	307
-}
+ret

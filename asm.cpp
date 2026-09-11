@@ -8,8 +8,12 @@ string source = ""; /// file >> asm
 string output = " "; /// asm << file
 string token = ""; /// current opcode
 
-string labelNames[128];
-string labelAddresses[128];
+string funcNames[256];
+int funcArgs[256];
+int funcCount = 0;
+
+string labelNames[512];
+string labelAddresses[512];
 int labelCount = 0;
 
 string modulesList[128];
@@ -50,16 +54,17 @@ string countTokens() {
     return tknss.str();
 }
 
-bool isDefined(string testToken) { /// unused
+bool isFunction(string testToken) {
     bool wasDefined = false;
-    for (int tc = 0; tc < labelCount; tc++) {
-        if (labelNames[tc] == testToken) {
+    for (int tc = 0; tc < funcCount; tc++) {
+        if (funcNames[tc] == testToken) {
             wasDefined = true;
             break;
         }
     }
     return wasDefined;
 }
+
 
 bool replace(string& str, const string& from, const string& to) {
     size_t start_pos = str.find(from);
@@ -156,13 +161,37 @@ void opcode() {
         }
     }
     else if (token == "wipe") {
-        output += "162 ";
+        output += "160 ";
     }
     else if (token == "push") {
-        output += "161 ";
+        getToken();
+        if (token == "a") {
+            output += "161 ";
+        } else if (token == "b") {
+            output += "162 ";
+        } else if (token == "c") {
+            output += "163 ";
+        } else {
+            output += "167 " + token + " ";
+        }
+
     }
     else if (token == "pop") {
-        output += "160 ";
+        getToken();
+        if (token == "a") {
+            output += "164 ";
+        } else if (token == "b") {
+            output += "165 ";
+        } else if (token == "c") {
+            output += "166 ";
+        } else {
+            cout << "Error: POP can be used only on Register\n";
+            errorCount++;
+            return;
+        }
+    }
+    else if (token == "kbhit") {
+        output += "170 ";
     }
     else if (token == "ret") {
         output += "255 ";
@@ -367,6 +396,26 @@ void opcode() {
             return;
         } else {
             output += "24 " + token + " ";
+        }
+    }
+    else if (token == "pushif") {
+        getToken();
+        if (isdigit(token[0])) {
+            cout << "\nError: PUSHIF can't be used on integer\n";
+            errorCount++;
+            return;
+        } else if (token == "z") {
+            output += "180 ";
+        } else if (token == "nz") {
+            output += "181 ";
+        } else if (token == "n") {
+            output += "182 ";
+        } else if (token == "p") {
+            output += "183 ";
+        } else {
+            cout << "\nError: PUSHIF can be used only on FLAGS\n";
+            errorCount++;
+            return;
         }
     }
     else if (token == "ld") {
@@ -745,6 +794,42 @@ void opcode() {
     else if (isdigit(token[0])) {
         output += token + " ";
     }
+    else if (isFunction(token)) {
+        int funcID = 0;
+        int argNum;
+        string funcName;
+        for (int x = 0; x < funcCount; x++) {
+            if (funcNames[x] == token) {
+                funcID = x;
+                break;
+            }
+        }
+        argNum = funcArgs[funcID];
+        funcName = funcNames[funcID];
+        cout << "found Function " << funcName << " and " << argNum << " args\n";
+        while (argNum > 0) {
+            getToken();
+            if (token == "a") {
+                output += "161 ";
+            } else if (token == "b") {
+                output += "162 ";
+            } else if (token == "c") {
+                output += "163 ";
+            } else {
+                output += "167 " + token + " ";
+            }
+            argNum--;
+        }
+        argNum = funcArgs[funcID];
+        if (argNum == 1) {
+            output += "164 ";
+        } else if (argNum == 2) {
+            output += "165 164 ";
+        } else if (argNum == 3) {
+            output += "166 165 164 ";
+        }
+        output += "19 " + funcName + " ";
+    }
     else {
         if (token != "") {
             cout << "Error: undefined expression '" << token << "'\n";
@@ -772,6 +857,37 @@ bool readSource(string fileName) {
                 directiveArg.erase(0, 7);
                 cout << "Header '" << directiveArg << "'\n";
                 headers += directiveArg + " ";
+            } else if (line.find("def ") == 0) {
+                int argNum = 0;
+                string funcName = "";
+                directiveArg = line;
+                directiveArg.erase(0, 4);
+
+                for (int x = 0; directiveArg[x] != ' ' && x < directiveArg.length(); x++) {
+                    if (directiveArg[x] == ';') {
+                        cout << "Preprocessor error: unexpected EOL while parsing Function\n";
+                        errorCount++;
+                        break;
+                    }
+                    funcName += directiveArg[x];
+                }
+                if (directiveArg[directiveArg.length()-1] == '0') {
+                    argNum = 0;
+                } else if (directiveArg[directiveArg.length()-1] == '1') {
+                    argNum = 1;
+                } else if (directiveArg[directiveArg.length()-1] == '2') {
+                    argNum = 2;
+                } else if (directiveArg[directiveArg.length()-1] == '3') {
+                    argNum = 3;
+                } else {
+                    cout << "Preprocessor error: invalid number of arguments: " << directiveArg[directiveArg.length()-1] << "\n";
+                    errorCount++;
+                }
+                cout << "Function " << funcName << " with " << argNum << " arguments\n";
+                source += funcName + ": ";
+                funcNames[funcCount] = funcName;
+                funcArgs[funcCount] = argNum;
+                funcCount++;
             } else {
                 for (int x = 0; x < line.length(); x++) {
                     if (line[x] == '"') {
