@@ -1,11 +1,11 @@
-lbl_main
+main:
 cls
 call draw
 call mark
 jmp main
 
 
-lbl_mark
+mark:
 mov c field
 getkey
 
@@ -42,37 +42,38 @@ add c b
 ld a state
 cmp 0
 mov8 a 1
-mov8 b *x
+mov8 b 'o'
 rjz 5
 mov8 a 0
-mov8 b *o
+mov8 b 'x'
 wr a state
 
 wr b c
 ret
 
 
-
-lbl_draw
+draw:
 mov b field
-lbl_suka
+xloop:
 ld a b
 inc b
 cmp 255
 jz ext
 putc
-jmp suka
-lbl_ext
+jmp xloop
+ext:
 ret
 
 
-lbl_field
-124 32 124 32 124 32 124 10
-124 32 124 32 124 32 124 10
-124 32 124 32 124 32 124 10
+field:
+"| | | |"+
+10
+"| | | |"+
+10
+"| | | |"+
 255
 
-lbl_state
+state:
 1
 
 ret

@@ -1,26 +1,19 @@
 Программы храняться в файле bios.cvm (в той же директории что и CppVM.exe)
-Если нет программы или программа выполнена, запускается MiniIDE
 
 
 Ошибки:
 - Не обнаружены
 
 Планы:
-- Графика (graphics.h)
-- Математические функции (^,% и т.д) (mod)
-- Замена 16-bit числа на 2 8-bit (asm)
+- Битовые сдвиги
+- Разобраться с чтением файла и tmp
+- pushstr(a) и popstr(a) в модуле strings
+- system.*() функции в модуле system
+- Прерывания
 - Более качественный вывод ассемблера (asm)
-- Автоматическая замена одиночных символов (asm)
-- Автоматическая замена 16-bit чисел (asm)
-- if-else (asm)
-- while (asm)
-- Обновить MIDE
-- Логические операции
+- Высокоуровневые структуры управления (asm)
 - Перевод исполняемых файлов в HEX-формат
-
-Новые функции:
-- Поддержка модулей (asm)
-- Работа со строками, массивами (mod)
+- Графика (graphics.h)
 
 
 Команды:
@@ -32,7 +25,7 @@
 4 - dec a
 5 - dec b
 6 - dec c
-7 - cmp [int]
+7 - cmp [double]
 8 - cmp b
 9 - cmp c
 
@@ -59,27 +52,27 @@
 29 - jp  c
 
 
-30 - mov a,b
-31 - mov a,c
-32 - mov b,a
-33 - mov b,c
-34 - mov c,a
-35 - mov c,b
+30 - mov a b
+31 - mov a c
+32 - mov b a
+33 - mov b c
+34 - mov c a
+35 - mov c b
 
-40 - mov8 a,[int]
-41 - mov8 b,[int]
-42 - mov8 c,[int]
+40 - mov8 a [int]
+41 - mov8 b [int]
+42 - mov8 c [int]
 43 - mov  a [double]
 44 - mov  b [double]
 45 - mov  c [double]
 
 
-50 - ld a,(addr)
-51 - ld b,(addr)
-52 - ld c,(addr)
-53 - wr a,(addr)
-54 - wr b,(addr)
-55 - wr c,(addr)
+50 - ld a (addr)
+51 - ld b (addr)
+52 - ld c (addr)
+53 - wr a (addr)
+54 - wr b (addr)
+55 - wr c (addr)
 
 60 - ld a (a)
 61 - ld a (b)
@@ -101,56 +94,66 @@
 77 - wr c (b)
 78 - wr c (c)
 
-110 - add a,b
-111 - add a,c
-112 - add b,a
-113 - add b,c
-114 - add c,a
-115 - add c,b
-116 - add a,[int]
-117 - add b,[int]
-118 - add c,[int]
+100 - setpos
 
-120 - sub a,b
-121 - sub a,c
-122 - sub b,a
-123 - sub b,c
-124 - sub c,a
-125 - sub c,b
-126 - sub a,[int]
-127 - sub b,[int]
-128 - sub c,[int]
+110 - add a b
+111 - add a c
+112 - add b a
+113 - add b c
+114 - add c a
+115 - add c b
+116 - add a [int]
+117 - add b [int]
+118 - add c [int]
 
-130 - mul a,b
-131 - mul a,c
-132 - mul b,a
-133 - mul b,c
-134 - mul c,a
-135 - mul c,b
-136 - mul a,[int]
-137 - mul b,[int]
-138 - mul c,[int]
+120 - sub a b
+121 - sub a c
+122 - sub b a
+123 - sub b c
+124 - sub c a
+125 - sub c b
+126 - sub a [int]
+127 - sub b [int]
+128 - sub c [int]
 
-140 - div a,b
-141 - div a,c
-142 - div b,a
-143 - div b,c
-144 - div c,a
-145 - div c,b
-146 - div a,[int]
-147 - div b,[int]
-148 - div c,[int]
+130 - mul a b
+131 - mul a c
+132 - mul b a
+133 - mul b c
+134 - mul c a
+135 - mul c b
+136 - mul a [int]
+137 - mul b [int]
+138 - mul c [int]
+
+140 - div a b
+141 - div a c
+142 - div b a
+143 - div b c
+144 - div c a
+145 - div c b
+146 - div a [int]
+147 - div b [int]
+148 - div c [int]
+
+150 - and [double]
+151 - or  [double]
+152 - xor [double]
+153 - not a
+154 - and b
+155 - or  b
+156 - xor b
+
+160 - in
+161 - out
+162 - wipe
+163 - do
 
 190 - rjmp [signed]
 191 - rjz  [signed]
 192 - rjnz [signed]
 193 - rjn  [signed]
 194 - rjp  [signed]
-195 - rjmp c !!
-196 - rjz  c !!
-197 - rjnz c !!
-198 - rjn  c !!
-199 - rjp  c !!
 
 250 - noinf
 251 - debug
@@ -161,7 +164,11 @@
 
 import NAME - импорт модуля modules/NAME.asm
 #комментарий - для описания работы программы
-*А - символ
+label: - метка
+'a' - символ
+"abcde" - строка
+"abcde"+ - строка без терминатора
+%10110 - двочиное число
 -43 - отрицательное число
 
 Справка по файлам:
@@ -171,5 +178,6 @@ bios.cvm - Исполняемый файл
 modules/ - папка с модулями
 examples/ - папка с примерами
 asm.py - ассемблер
+mide.py - среда разработки
 cppvm.exe - виртуальная машина
 readme.txt - информация о сборке

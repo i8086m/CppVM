@@ -8,7 +8,7 @@ call getstr
 
 mov8 b 0
 
-lbl_loop
+loop:
 inc b
 exch
 mov a string
@@ -20,9 +20,10 @@ jnz loop
 
 # Вывести строку 10 раз
 
+getkey
 ret
 
 
-lbl_string
+string:
 0 0 0 0 0 0
 0 0 0 0 0 0

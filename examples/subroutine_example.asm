@@ -1,20 +1,20 @@
-call PRINT
+call print
 ret
 
-lbl_PRINT
-call CLEAR
-call LOAD
-call PRNT
+print:
+call clear
+call load
+call prnt
 ret
 
-lbl_CLEAR
+clear:
 cls
 ret
 
-lbl_LOAD
+load:
 mov8 a 5
 ret
 
-lbl_PRNT
+prnt:
 put
 ret

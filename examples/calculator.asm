@@ -61,27 +61,27 @@ cmp 4
 jz DIV
 jmp KON
 
-lbl_SUM
+SUM:
 add b c
 mov a b
 jmp KON
 
-lbl_SUB
+SUB:
 sub b c
 mov a b
 jmp KON
 
-lbl_MUL
+MUL:
 mul b c
 mov a b
 jmp KON
 
-lbl_DIV
+DIV:
 div b c
 mov a b
 jmp KON
 
-lbl_KON
+KON:
 puts
 endl
 getkey

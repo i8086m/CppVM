@@ -1,23 +1,23 @@
-#include <iostream>
-#include "windows.h"
-#include <stdint.h>
-#include <conio.h>
-#include <fstream>
-#include <string>
-#include <sstream>
+#include <iostream> // ввод-вывод
+#include "windows.h" // system()
+#include <stdint.h> // uint8_t
+#include <conio.h> // getch
+#include <fstream> // files
+#include <string> // string
+#include <sstream> // sstream
 
 #define RAMSIZE 65536
 #define RELJP(NUM) if (NUM > 127) i = i+NUM-256; else i = i + NUM
-// long relative jump here
 
 int state = 0;
 uint8_t ram[RAMSIZE];
-uint8_t prnt;
-unsigned short int a,b,c,d,e = 0;
+unsigned short int a,b,c = 0;
 unsigned short int ta,tb,tc,na,nb,nc = 0;
-unsigned short int sp = 0;
+unsigned short int sp, usp = 0;
+char ustack[32];
 unsigned short int stack[32];
 unsigned short int i = 0;
+
 int tmp;
 //           Z N C R R R R R
 bool f[8] = {0,0,0,0,0,0,0,0};
@@ -45,7 +45,9 @@ int main() {
 	i = 0;
 	int buff, bc = 0;
 	if (!fin.is_open()) {
-		state = 1;
+		std::cout << "bios.cvm not found" << std::endl;
+		system("pause");
+		return 0;
 	} else {
 		while (bc < RAMSIZE+1 && !fin.eof()) {
 			fin >> buff;
@@ -61,9 +63,9 @@ int main() {
 		}
 		fin.close();
 	}
-	bc--;
+
 	if (f_msg) {
-		std::cout << "CppVM v1.2.4" << std::endl;//v171224
+		std::cout << "CppVM v1.3.0" << std::endl;
 		if (RAMSIZE >= 1024) {
 			std::cout << "RAM: " << RAMSIZE/1024 << "kb" << std::endl << std::endl;
 		} else {
@@ -83,7 +85,6 @@ r:
 				}
 				bc++;
 			}
-
 			std::stringstream mon0;
 			std::string mon;
 			tmp--;
@@ -95,7 +96,6 @@ r:
 			char cmon[64];
 			tmp = 0;
 			strcpy(cmon, mon.c_str());
-			getch();
 			SetConsoleTitle(cmon);
 		}
 		if (ram[i] == 0) {
@@ -121,21 +121,20 @@ r:
 		}
 		if (ram[i] == 7) {
 			i++;
-			if (a-ram[i] == 0) {
+			if (a-(ram[i]*256+ram[i+1]) == 0) {
 				f[0] = true;
 			} else {
 				f[0] = false;
 			}
-			if (a-ram[i] < 0) {
+			if ((short int)a-(ram[i]*256+ram[i+1]) < 0) {
 				f[1] = true;
 			} else {
 				f[1] = false;
 			}
-			i++;
+			i=i+2;
 			goto r;
 		}
 		if (ram[i] == 8) {
-			i++;
 			if (a-b == 0) {
 				f[0] = true;
 			} else {
@@ -150,7 +149,6 @@ r:
 			goto r;
 		}
 		if (ram[i] == 9) {
-			i++;
 			if (a-c == 0) {
 				f[0] = true;
 			} else {
@@ -168,6 +166,7 @@ r:
 		if (ram[i] == 10) {
 			std::cout << a;
 		}
+
 		if (ram[i] == 11) {
 			if (a > 32767) {
 				std::cout << a-65536;
@@ -320,7 +319,6 @@ r:
 		if (ram[i] == 35) {
 			c = b;
 		}
-
 		if (ram[i] == 40) {
 			i++;
 			a=ram[i];
@@ -484,6 +482,9 @@ r:
 			ram[c] = c;
 			goto r;
 		}
+		if (ram[i] == 100) {
+			gotoxy(a,b);
+		}
 		if (ram[i] == 110) {
 			a=a+b;
 		}
@@ -628,6 +629,65 @@ r:
 			i++;
 			goto r;
 		}
+		if (ram[i] == 150) {
+			i++;
+			a = (a & ram[i]*256+ram[i+1]);
+			i=i+2;
+			goto r;
+		}
+		if (ram[i] == 151) {
+			i++;
+			a = (a | ram[i]*256+ram[i+1]);
+			i=i+2;
+			goto r;
+		}
+		if (ram[i] == 152) {
+			i++;
+			a = (a ^ ram[i]*256+ram[i+1]);
+			i=i+2;
+			goto r;
+		}
+		if (ram[i] == 153) {
+			i++;
+			a = (~ a);
+			goto r;
+		}
+		if (ram[i] == 154) {
+			i++;
+			a = (a & b);
+			goto r;
+		}
+		if (ram[i] == 155) {
+			i++;
+			a = (a | b);
+			goto r;
+		}
+		if (ram[i] == 156) {
+			i++;
+			a = (a ^ b);
+			goto r;	
+		}
+		
+		if (ram[i] == 160) {
+			i++;
+			if (usp>0) {
+				usp--;
+				a = ustack[usp];
+			}
+		}
+		if (ram[i] == 161) {
+			ustack[usp] = a;
+			if (usp < 31) {
+				usp++;
+			}
+		}
+		
+		if (ram[i] == 162) {
+			usp = 0;
+		}
+		if (ram[i] == 163) {
+			system(ustack);
+		}
 		if (ram[i] == 190) {
 			//i++;
 			RELJP(ram[i+1]);
@@ -669,47 +729,7 @@ r:
 			i=i+2;
 			goto r;
 		}
-		/*if (ram[i] == 195) {
-			//i++;
-			RELJP(c);
-			goto r;
-		}
-		if (ram[i] == 196) {
-			if (f[0]) {
-				//i++;
-				RELJP(c);
-				goto r;
-			}
-			i++;
-			goto r;
-		}
-		if (ram[i] == 197) {
-			if (!f[0]) {
-				//i++;
-				RELJP(c);
-				goto r;
-			}
-			i++;
-			goto r;
-		}
-		if (ram[i] == 198) {
-			if (f[1]) {
-				//i++;
-				RELJP(c);
-				goto r;
-			}
-			i++;
-			goto r;
-		}
-		if (ram[i] == 199) {
-			if (!f[1]) {
-				//i++;
-				RELJP(c);
-				goto r;
-			}
-			i++;
-			goto r;
-		}*/
+		
 		if (ram[i] == 255) {
 			if (sp == 0) {
 				if (f_msg) {
@@ -726,37 +746,5 @@ r:
 
 		i++;
 	}
-
-	if (state == 1) {
-		i = 0;
-		a = 0;
-		b = 0;
-		c = 0;
-		f[0] = false;
-		f[1] = false;
-		f[2] = false;
-		f[3] = false;
-		std::cout << std::endl << std::endl << "Mini IDE" << std::endl;
-		std::cout << "255 to save&exit" << std::endl << std::endl;
-		int sas = 0;
-		while (i < RAMSIZE-1) {
-			ram[i] = 0;
-			i++;
-		}
-		ram[RAMSIZE-1] = 255;
-		i = 0;
-		while (state == 1) {
-			std::cout << "Enter address " << i << " value: ";
-			std::cin >> sas;
-			ram[i] = sas;
-			if (ram[i] == 255) {
-				i = 0;
-				state = 0;
-				std::cout << std::endl;
-				goto r;
-			}
-			i++;
-		}
-		std::cin.get();
-	}
+	return 0;
 }
