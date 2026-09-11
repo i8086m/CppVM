@@ -1,753 +1,595 @@
-//#define _WIN32_WINNT 0x500 // windows.h
-#include "windows.h" // system()
-#include <iostream> // ввод-вывод
-#include <conio.h> // getch
-#include <fstream> // bootloader
-#include <string> // stack
-#include <sstream> // string stream
+#include "windows.h"
+#include <iostream>
+#include <conio.h>
+#include <cstdint>
+#include <fstream>
+#include <string>
+#include <sstream>
 
-#define RAMSIZE 1048576
-#define RELJP(NUM) if (NUM > 2147483647) i = i + NUM - 4294967296; else i = i + NUM
-#define STACKSIZE 64
-#define USTACKSIZE 128
-#define VERSION "CppVM v2.3.1"
+#define RAM_SIZE (1024 * 1024) // 1KB RAM
+#define STACK_SIZE 64
+#define USTACK_SIZE 128
 
-int state = 0;
-unsigned int ram[RAMSIZE];
-unsigned int a,b,c = 0; /// LEGACY
-unsigned int d,e = 0; /// EXTRA
-unsigned int ta,tb,tc,na,nb,nc = 0;
-unsigned int sp, usp = 0; /// stack pointers
-unsigned int ustack[USTACKSIZE];
-unsigned int stack[STACKSIZE];
-unsigned int i = 0;
+#define RELJP(ADDR) if (ADDR > 2147483647) state.pc = state.pc + ADDR - 4294967296; else state.pc = state.pc + ADDR
 
-int tmp;
-//               Z N P C
-bool flags[4] = {0,0,0,0};
-bool f_dbg = false;
-bool f_msg = false;
+#define VERSION "CppVM v3.0.0 Indev"
+
+
+struct VmFlags {
+    bool zero = false;
+    bool carry = false;
+    bool sign = false;
+    bool overflow = false;
+};
+
+struct VmState {
+    bool isRunning = true;
+
+    uint32_t a = 0, b = 0, c = 0; // General purpose registers
+    uint32_t na = 0, nb = 0, nc = 0; // Alternative registers TODO consider deprecating?
+    uint32_t sp = 0; // Stack Pointer
+    uint32_t usp = 0; // User Stack Pointer
+    uint32_t pc = 0; // Program Counter
+
+    VmFlags flags = VmFlags();
+};
+
+unsigned int ram[RAM_SIZE]; // TODO init ram?
+unsigned int stack[STACK_SIZE];
+unsigned int ustack[USTACK_SIZE];
+
+auto state = VmState();
+
 
 std::ifstream fin("bios.cvm"); // Чтение файла
 
-//RECT rect;
-//HWND window = GetConsoleWindow();
-//HDC hdc = GetDC(window);
 
-void gotoxy(int x, int y) {
+void goto_xy(const SHORT x, const SHORT y) {
     COORD coord;
     coord.X = x;
     coord.Y = y;
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
-/*void gfxmode(bool gfxState) {
-    gfxState = !gfxState;
-    if (!gfxState) {
-        ShowScrollBar(window, SB_BOTH, gfxState);
-    }
-    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-    CONSOLE_CURSOR_INFO info;
-    info.dwSize = 100;
-    info.bVisible = gfxState;
-    SetConsoleCursorInfo(consoleHandle, &info);
-}
-void gfxclear(int colorShift) {
-    GetClientRect(window, &rect);
-    FillRect(hdc, &rect, (HBRUSH)(COLOR_WINDOW+colorShift));
-}*/
 
 int main() {
-    //SelectObject(hdc, GetStockObject(DC_PEN));
-    //SetDCPenColor(hdc, RGB(255,0,0));
     SetConsoleTitle(VERSION);
+    std::cout << "CVM Started" << std::endl; // TODO remove
 
-    while (i < RAMSIZE-1) { /// erase RAM
-        ram[i] = 0;
-        i++;
+    while (state.pc < RAM_SIZE - 1) {
+        /// erase RAM
+        ram[state.pc] = 0;
+        state.pc++;
     }
-    ram[RAMSIZE-1] = 255;
-    i = 0;
+    ram[RAM_SIZE - 1] = 255;
+    state.pc = 0;
+
+    std::cout << "Loading bios..." << std::endl; // TODO remove
+
     int buff, bc = 0;
-    if (!fin.is_open()) { /// bootloader
+    if (!fin.is_open()) {
+        /// bootloader
         std::cout << "bios.cvm not found" << std::endl;
         system("pause");
         return 0;
-    } else {
-        while (bc < RAMSIZE+1 && !fin.eof()) {
-            fin >> buff;
-            ram[bc] = buff;
-            fin >> buff;
-            ram[bc] = ram[bc]*256+buff;
-            fin >> buff;
-            ram[bc] = ram[bc]*256+buff;
-            fin >> buff;
-            ram[bc] = ram[bc]*256+buff;
-            //std::cout << bc << " " << ram[bc] <<std::endl;
-            bc++;
-        }
-        fin.close();
     }
 
+    while (bc < RAM_SIZE && !fin.eof()) {
+        fin >> buff;
+        ram[bc] = buff;
+        fin >> buff;
+        ram[bc] = ram[bc] * 256 + buff;
+        fin >> buff;
+        ram[bc] = ram[bc] * 256 + buff;
+        fin >> buff;
+        ram[bc] = ram[bc] * 256 + buff;
+        //std::cout << bc << " " << ram[bc] <<std::endl;
+        bc++;
+    }
+    fin.close();
 
-    while (state == 0) {
-        if (f_dbg) {
-            bc = 0;
-            tmp = 0;
-            while (bc<RAMSIZE) {
-                if (ram[bc] != 0) {
-                    tmp++;
-                }
-                bc++;
-            }
-            std::stringstream mon0;
-            std::string mon;
-            tmp--;
-            mon0 << "RAM " << "Usage: " << tmp * 4 << "/" << RAMSIZE / 256 << "kb (" << tmp*100/RAMSIZE << "%)";
-            mon0 << "  |  A=" << a << ", B=" << b << ", C=" << c;
-            mon0 << "  |  PC=" << i << "  |  ram[PC]=" << +ram[i];
-            mon = mon0.str();			// Type 1
-            //std::getline(mon0, mon);	// Type 2
-            char cmon[64];
-            tmp = 0;
-            strcpy(cmon, mon.c_str());
-            SetConsoleTitle(cmon);
-            getch();
-        }
-        if (ram[i] == 0) {
+    std::cout << "CVM is running" << std::endl; // TODO remove
+    while (state.isRunning) {
+        if (ram[state.pc] == 0) {
             // Do nothing
+        } else if (ram[state.pc] == 1) {
+            state.a++;
+        } else if (ram[state.pc] == 2) {
+            state.b++;
+        } else if (ram[state.pc] == 3) {
+            state.c++;
+        } else if (ram[state.pc] == 4) {
+            state.a--;
+        } else if (ram[state.pc] == 5) {
+            state.b--;
         }
-        else if (ram[i] == 1) {
-            a++;
-        }
-        else if (ram[i] == 2) {
-            b++;
-        }
-        else if (ram[i] == 3) {
-            c++;
-        }
-        else if (ram[i] == 4) {
-            a--;
-        }
-        else if (ram[i] == 5) {
-            b--;
-        }
-        if (ram[i] == 6) {
-            c--;
-        }
-        else if (ram[i] == 7) {
-            i++;
-            int tmpa = 0;
-            int tmpb = 0;
-            if (a > 2147483648U) {
-                tmpa = a-4294967296;
-            } else {
-                tmpa = a;
-            }
-            tmpb = ram[i];
-            if (tmpa-tmpb == 0) {
-                flags[0] = true;
-            } else {
-                flags[0] = false;
-            }
-            if (tmpa-tmpb < 0) {
-                flags[1] = true;
-            } else {
-                flags[1] = false;
-            }
-            if (tmpa-tmpb > 0) {
-                flags[2] = true;
-            } else {
-                flags[2] = false;
-            }
-        }
-        else if (ram[i] == 8) {
-            if (a-b == 0) {
-                flags[0] = true;
-            } else {
-                flags[0] = false;
-            }
-            if ((signed)(a-b) < 0) {
-                flags[1] = true;
-            } else {
-                flags[1] = false;
-            }
-            if ((signed)(a-b) > 0) {
-                flags[2] = true;
-            } else {
-                flags[2] = false;
-            }
-        }
-        else if (ram[i] == 9) {
-            if (a-c == 0) {
-                flags[0] = true;
-            } else {
-                flags[0] = false;
-            }
-            if ((signed)(a-c) < 0) {
-                flags[1] = true;
-            } else {
-                flags[1] = false;
-            }
-            if ((signed)(a-c) > 0) {
-                flags[2] = true;
-            } else {
-                flags[2] = false;
-            }
-        }
+        if (ram[state.pc] == 6) {
+            state.c--;
+        } else if (ram[state.pc] == 7) {
+            state.pc++;
 
-        else if (ram[i] == 10) {
-            std::cout << a;
-        }
+            const uint32_t value = ram[state.pc];
+            const uint32_t result = state.a - value;
 
-        else if (ram[i] == 11) {
-            if (a > 2147483648U) {
-                std::cout << a-4294967296;
+            // Zero: A == value
+            state.flags.zero = result == 0;
+
+            // Borrow: A < value, unsigned
+            state.flags.carry = state.a < value;
+
+            // Sign: MSB = 1 (negative)
+            state.flags.sign = (result & 0x80000000u) != 0;
+
+            // Overflow: occurs when A and B have different
+            // signs and the result's sign differs from A.
+            state.flags.overflow =
+                    ((state.a ^ value) & (state.a ^ result) & 0x80000000u) != 0;
+        } else if (ram[state.pc] == 8) {
+            const uint32_t result = state.a - state.b;
+
+            // Zero: A == value
+            state.flags.zero = result == 0;
+
+            // Borrow: A < value, unsigned
+            state.flags.carry = state.a < state.b;
+
+            // Sign: MSB = 1 (negative)
+            state.flags.sign = (result & 0x80000000u) != 0;
+
+            // Overflow: occurs when A and B have different
+            // signs and the result's sign differs from A.
+            state.flags.overflow =
+                    ((state.a ^ state.b) & (state.a ^ result) & 0x80000000u) != 0;
+        } else if (ram[state.pc] == 9) {
+            const uint32_t result = state.a - state.c;
+
+            // Zero: A == value
+            state.flags.zero = result == 0;
+
+            // Borrow: A < value, unsigned
+            state.flags.carry = state.a < state.c;
+
+            // Sign: MSB = 1 (negative)
+            state.flags.sign = (result & 0x80000000u) != 0;
+
+            // Overflow: occurs when A and B have different
+            // signs and the result's sign differs from A.
+            state.flags.overflow =
+                    ((state.a ^ state.c) & (state.a ^ result) & 0x80000000u) != 0;
+        } else if (ram[state.pc] == 10) {
+            std::cout << state.a;
+        } else if (ram[state.pc] == 11) {
+            if (state.a > 2147483648U) {
+                std::cout << state.a - 4294967296U;
             } else {
-                std::cout << a;
+                std::cout << state.a;
             }
-        }
-        else if (ram[i] == 12) {///unicode?
-            if (a < 256) {
+        } else if (ram[state.pc] == 12) {
+            ///unicode?
+            if (state.a < 256) {
                 char ch;
-                ch = (char)a;
+                ch = (char) state.a;
                 //std::cout << ch;
                 putchar(ch);
             }
-
-        }
-        else if (ram[i] == 13) {
+        } else if (ram[state.pc] == 13) {
             putchar('\n');
-        }
-        else if (ram[i] == 14) {
-            std::cin >> tmp;
-            a = tmp;
-        }
-        else if (ram[i] == 15) {
-            //nodelay(stdscr,TRUE);
-            a = getch();
-        }
-        else if (ram[i] == 16) {
+        } else if (ram[state.pc] == 14) {
+            uint32_t readValue;
+            std::cin >> readValue;
+            state.a = readValue;
+        } else if (ram[state.pc] == 15) {
+            state.a = getch();
+        } else if (ram[state.pc] == 16) {
             system("cls");
-        }
-        else if (ram[i] == 17) {
-            if (sp < STACKSIZE) {
-                stack[sp] = i+1;
-                sp++;
-                i = c;
+        } else if (ram[state.pc] == 17) {
+            if (state.sp < STACK_SIZE) {
+                stack[state.sp] = state.pc + 1;
+                state.sp++;
+                state.pc = state.c;
                 continue;
             } else {
                 std::cout << std::endl << "Error: Stack Overflow" << std::endl;
-                state = 2;
+                state.isRunning = false;
             }
-        }
-        else if (ram[i] == 18) {
-            ta = a;
-            tb = b;
-            tc = c;
-            a = na;
-            b = nb;
-            c = nc;
-            na = ta;
-            nb = tb;
-            nc = tc;
-        }
-        else if (ram[i] == 19) {
-            if (sp < STACKSIZE) {
-                stack[sp] = i+2;
-                sp++;
-                i++;
-                i = ram[i];
+        } else if (ram[state.pc] == 18) {
+            uint32_t tempA = state.a;
+            uint32_t tempB = state.b;
+            uint32_t tempC = state.c;
+            state.a = state.na;
+            state.b = state.nb;
+            state.c = state.nc;
+            state.na = tempA;
+            state.nb = tempB;
+            state.nc = tempC;
+        } else if (ram[state.pc] == 19) {
+            if (state.sp < STACK_SIZE) {
+                stack[state.sp] = state.pc + 2;
+                state.sp++;
+                state.pc++;
+                state.pc = ram[state.pc];
                 continue;
             } else {
                 std::cout << std::endl << "Error: Stack Overflow" << std::endl;
-                state = 2;
+                state.isRunning = false;
             }
-        }
-        else if (ram[i] == 20) {
-            i++;
-            i = ram[i];
+        } else if (ram[state.pc] == 20) {
+            state.pc++;
+            state.pc = ram[state.pc];
             continue;
-        }
-        else if (ram[i] == 21) {
-            if (flags[0]) {
-                i++;
-                i = ram[i];
+        } else if (ram[state.pc] == 21) {
+            // equal to
+            if (state.flags.zero) {
+                state.pc++;
+                state.pc = ram[state.pc];
                 continue;
             } else {
-                i++;
+                state.pc++;
             }
-        }
-        else if (ram[i] == 22) {
-            if (!flags[0]) {
-                i++;
-                i = ram[i];
+        } else if (ram[state.pc] == 22) {
+            // not equal to
+            if (!state.flags.zero) {
+                state.pc++;
+                state.pc = ram[state.pc];
                 continue;
             } else {
-                i++;
+                state.pc++;
             }
-        }
-        else if (ram[i] == 23) {
-            if (flags[1]) {
-                i++;
-                i = ram[i];
+        } else if (ram[state.pc] == 23) {
+            // less than
+            if (state.flags.carry) {
+                state.pc++;
+                state.pc = ram[state.pc];
                 continue;
             } else {
-                i++;
+                state.pc++;
             }
-        }
-        else if (ram[i] == 24) {
-            if (flags[2]) {
-                i++;
-                i = ram[i];
+        } else if (ram[state.pc] == 24) {
+            // greater than
+            if (!state.flags.carry && !state.flags.zero) {
+                state.pc++;
+                state.pc = ram[state.pc];
                 continue;
             } else {
-                i++;
+                state.pc++;
             }
-        }
-        else if (ram[i] == 25) {
-            i = c;
+        } else if (ram[state.pc] == 25) {
+            state.pc = state.c;
             continue;
-        }
-        else if (ram[i] == 26) {
-            if (flags[0]) {
-                i = c;
+        } else if (ram[state.pc] == 26) {
+            // equal to
+            if (state.flags.zero) {
+                state.pc = state.c;
                 continue;
             }
-        }
-        else if (ram[i] == 27) {
-            if (!flags[0]) {
-                i = c;
+        } else if (ram[state.pc] == 27) {
+            // not equal to
+            if (!state.flags.zero) {
+                state.pc = state.c;
                 continue;
             }
-        }
-        else if (ram[i] == 28) {
-            if (flags[1]) {
-                i = c;
+        } else if (ram[state.pc] == 28) {
+            // less than
+            if (state.flags.carry) {
+                state.pc = state.c;
                 continue;
             }
-        }
-        else if (ram[i] == 29) {
-            if (flags[2]) {
-                i = c;
+        } else if (ram[state.pc] == 29) {
+            // greater than
+            if (!state.flags.carry && !state.flags.zero) {
+                state.pc = state.c;
                 continue;
             }
-        }
-        else if (ram[i] == 30) {
-            a = b;
-        }
-        else if (ram[i] == 31) {
-            a = c;
-        }
-        else if (ram[i] == 32) {
-            b = a;
-        }
-        else if (ram[i] == 33) {
-            b = c;
-        }
-        else if (ram[i] == 34) {
-            c = a;
-        }
-        else if (ram[i] == 35) {
-            c = b;
+        } else if (ram[state.pc] == 30) {
+            state.a = state.b;
+        } else if (ram[state.pc] == 31) {
+            state.a = state.c;
+        } else if (ram[state.pc] == 32) {
+            state.b = state.a;
+        } else if (ram[state.pc] == 33) {
+            state.b = state.c;
+        } else if (ram[state.pc] == 34) {
+            state.c = state.a;
+        } else if (ram[state.pc] == 35) {
+            state.c = state.b;
         }
         /// 40-42 free
-        else if (ram[i] == 43) {
-            i++;
-            a=ram[i];
-        }
-        else if (ram[i] == 44) {
-            i++;
-            b=ram[i];
-        }
-        else if (ram[i] == 45) {
-            i++;
-            c=ram[i];
-        }
-        else if (ram[i] == 50) {
-            i++;
-            a=ram[ram[i]];
-        }
-        else if (ram[i] == 51) {
-            i++;
-            b=ram[ram[i]];
-        }
-        else if (ram[i] == 52) {
-            i++;
-            c=ram[ram[i]];
-        }
-        else if (ram[i] == 53) {
-            i++;
-            ram[ram[i]] = a;
-        }
-        else if (ram[i] == 54) {
-            i++;
-            ram[ram[i]] = b;
-        }
-        else if (ram[i] == 55) {
-            i++;
-            ram[ram[i]] = c;
-        }
-        else if (ram[i] == 60) {
-            a = ram[a];
-        }
-        else if (ram[i] == 61) {
-            a = ram[b];
-        }
-        else if (ram[i] == 62) {
-            a = ram[c];
-        }
-        else if (ram[i] == 63) {
-            b = ram[a];
-        }
-        else if (ram[i] == 64) {
-            b = ram[b];
-        }
-        else if (ram[i] == 65) {
-            b = ram[c];
-        }
-        else if (ram[i] == 66) {
-            c = ram[a];
-        }
-        else if (ram[i] == 67) {
-            c = ram[b];
-        }
-        else if (ram[i] == 68) {
-            c = ram[c];
-        }
-        else if (ram[i] == 70) {
-            ram[a] = a;
-        }
-        else if (ram[i] == 71) {
-            ram[b] = a;
-        }
-        else if (ram[i] == 72) {
-            ram[c] = a;
-        }
-        else if (ram[i] == 73) {
-            ram[a] = b;
-        }
-        else if (ram[i] == 74) {
-            ram[b] = b;
-        }
-        else if (ram[i] == 75) {
-            ram[c] = b;
-        }
-        else if (ram[i] == 76) {
-            ram[a] = c;
-        }
-        else if (ram[i] == 77) {
-            ram[b] = c;
-        }
-        else if (ram[i] == 78) {
-            ram[c] = c;
-        }
-        else if (ram[i] == 110) {
-            a=a+b;
-        }
-        else if (ram[i] == 111) {
-            a=a+c;
-        }
-        else if (ram[i] == 112) {
-            b=b+a;
-        }
-        else if (ram[i] == 113) {
-            b=b+c;
-        }
-        else if (ram[i] == 114) {
-            c=c+a;
-        }
-        else if (ram[i] == 115) {
-            c=c+b;
-        }
-        else if (ram[i] == 116) {
-            i++;
-            a=a+ram[i];
-        }
-        else if (ram[i] == 117) {
-            i++;
-            b=b+ram[i];
-        }
-        else if (ram[i] == 118) {
-            i++;
-            c=c+ram[i];
-        }
-        else if (ram[i] == 120) {
-            a=a-b;
-        }
-        else if (ram[i] == 121) {
-            a=a-c;
-        }
-        else if (ram[i] == 122) {
-            b=b-a;
-        }
-        else if (ram[i] == 123) {
-            b=b-c;
-        }
-        else if (ram[i] == 124) {
-            c=c-a;
-        }
-        else if (ram[i] == 125) {
-            c=c-b;
-        }
-        else if (ram[i] == 126) {
-            i++;
-            a=a-ram[i];
-        }
-        else if (ram[i] == 127) {
-            i++;
-            b=b-ram[i];
-        }
-        else if (ram[i] == 128) {
-            i++;
-            c=c-ram[i];
-        }
-        else if (ram[i] == 130) {
-            a=a*b;
-        }
-        else if (ram[i] == 131) {
-            a=a*c;
-        }
-        else if (ram[i] == 132) {
-            b=b*a;
-        }
-        else if (ram[i] == 133) {
-            b=b*c;
-        }
-        else if (ram[i] == 134) {
-            c=c*a;
-        }
-        else if (ram[i] == 135) {
-            c=c*b;
-        }
-        else if (ram[i] == 136) {
-            i++;
-            a=a*ram[i];
-        }
-        else if (ram[i] == 137) {
-            i++;
-            b=b*ram[i];
-        }
-        else if (ram[i] == 138) {
-            i++;
-            c=c*ram[i];
-        }
-        else if (ram[i] == 140) {
-            a=a/b;
-        }
-        else if (ram[i] == 141) {
-            a=a/c;
-        }
-        else if (ram[i] == 142) {
-            b=b/a;
-        }
-        else if (ram[i] == 143) {
-            b=b/c;
-        }
-        else if (ram[i] == 144) {
-            c=c/a;
-        }
-        else if (ram[i] == 145) {
-            c=c/b;
-        }
-        else if (ram[i] == 146) {
-            i++;
-            a=a/ram[i];
-        }
-        else if (ram[i] == 147) {
-            i++;
-            b=b/ram[i];
-        }
-        else if (ram[i] == 148) {
-            i++;
-            c=c/ram[i];
-        }
-        else if (ram[i] == 150) {
-            i++;
-            a = (a & ram[i]);
-        }
-        else if (ram[i] == 151) {
-            i++;
-            a = (a | ram[i]);
-        }
-        else if (ram[i] == 152) {
-            i++;
-            a = (a ^ ram[i]);
-        }
-        else if (ram[i] == 153) {
-            a = (~ a);
-        }
-        else if (ram[i] == 154) {
-            a = (a & b);
-        }
-        else if (ram[i] == 155) {
-            a = (a | b);
-        }
-        else if (ram[i] == 156) {
-            a = (a ^ b);
-        }
-
-        else if (ram[i] == 160) {
-            for (int x = 0; x < USTACKSIZE; x++) {
-                ustack[x] = 0;
+        else if (ram[state.pc] == 43) {
+            state.pc++;
+            state.a = ram[state.pc];
+        } else if (ram[state.pc] == 44) {
+            state.pc++;
+            state.b = ram[state.pc];
+        } else if (ram[state.pc] == 45) {
+            state.pc++;
+            state.c = ram[state.pc];
+        } else if (ram[state.pc] == 50) {
+            state.pc++;
+            state.a = ram[ram[state.pc]];
+        } else if (ram[state.pc] == 51) {
+            state.pc++;
+            state.b = ram[ram[state.pc]];
+        } else if (ram[state.pc] == 52) {
+            state.pc++;
+            state.c = ram[ram[state.pc]];
+        } else if (ram[state.pc] == 53) {
+            state.pc++;
+            ram[ram[state.pc]] = state.a;
+        } else if (ram[state.pc] == 54) {
+            state.pc++;
+            ram[ram[state.pc]] = state.b;
+        } else if (ram[state.pc] == 55) {
+            state.pc++;
+            ram[ram[state.pc]] = state.c;
+        } else if (ram[state.pc] == 60) {
+            state.a = ram[state.a];
+        } else if (ram[state.pc] == 61) {
+            state.a = ram[state.b];
+        } else if (ram[state.pc] == 62) {
+            state.a = ram[state.c];
+        } else if (ram[state.pc] == 63) {
+            state.b = ram[state.a];
+        } else if (ram[state.pc] == 64) {
+            state.b = ram[state.b];
+        } else if (ram[state.pc] == 65) {
+            state.b = ram[state.c];
+        } else if (ram[state.pc] == 66) {
+            state.c = ram[state.a];
+        } else if (ram[state.pc] == 67) {
+            state.c = ram[state.b];
+        } else if (ram[state.pc] == 68) {
+            state.c = ram[state.c];
+        } else if (ram[state.pc] == 70) {
+            ram[state.a] = state.a;
+        } else if (ram[state.pc] == 71) {
+            ram[state.b] = state.a;
+        } else if (ram[state.pc] == 72) {
+            ram[state.c] = state.a;
+        } else if (ram[state.pc] == 73) {
+            ram[state.a] = state.b;
+        } else if (ram[state.pc] == 74) {
+            ram[state.b] = state.b;
+        } else if (ram[state.pc] == 75) {
+            ram[state.c] = state.b;
+        } else if (ram[state.pc] == 76) {
+            ram[state.a] = state.c;
+        } else if (ram[state.pc] == 77) {
+            ram[state.b] = state.c;
+        } else if (ram[state.pc] == 78) {
+            ram[state.c] = state.c;
+        } else if (ram[state.pc] == 110) {
+            state.a = state.a + state.b;
+        } else if (ram[state.pc] == 111) {
+            state.a = state.a + state.c;
+        } else if (ram[state.pc] == 112) {
+            state.b = state.b + state.a;
+        } else if (ram[state.pc] == 113) {
+            state.b = state.b + state.c;
+        } else if (ram[state.pc] == 114) {
+            state.c = state.c + state.a;
+        } else if (ram[state.pc] == 115) {
+            state.c = state.c + state.b;
+        } else if (ram[state.pc] == 116) {
+            state.pc++;
+            state.a = state.a + ram[state.pc];
+        } else if (ram[state.pc] == 117) {
+            state.pc++;
+            state.b = state.b + ram[state.pc];
+        } else if (ram[state.pc] == 118) {
+            state.pc++;
+            state.c = state.c + ram[state.pc];
+        } else if (ram[state.pc] == 120) {
+            state.a = state.a - state.b;
+        } else if (ram[state.pc] == 121) {
+            state.a = state.a - state.c;
+        } else if (ram[state.pc] == 122) {
+            state.b = state.b - state.a;
+        } else if (ram[state.pc] == 123) {
+            state.b = state.b - state.c;
+        } else if (ram[state.pc] == 124) {
+            state.c = state.c - state.a;
+        } else if (ram[state.pc] == 125) {
+            state.c = state.c - state.b;
+        } else if (ram[state.pc] == 126) {
+            state.pc++;
+            state.a = state.a - ram[state.pc];
+        } else if (ram[state.pc] == 127) {
+            state.pc++;
+            state.b = state.b - ram[state.pc];
+        } else if (ram[state.pc] == 128) {
+            state.pc++;
+            state.c = state.c - ram[state.pc];
+        } else if (ram[state.pc] == 130) {
+            state.a = state.a * state.b;
+        } else if (ram[state.pc] == 131) {
+            state.a = state.a * state.c;
+        } else if (ram[state.pc] == 132) {
+            state.b = state.b * state.a;
+        } else if (ram[state.pc] == 133) {
+            state.b = state.b * state.c;
+        } else if (ram[state.pc] == 134) {
+            state.c = state.c * state.a;
+        } else if (ram[state.pc] == 135) {
+            state.c = state.c * state.b;
+        } else if (ram[state.pc] == 136) {
+            state.pc++;
+            state.a = state.a * ram[state.pc];
+        } else if (ram[state.pc] == 137) {
+            state.pc++;
+            state.b = state.b * ram[state.pc];
+        } else if (ram[state.pc] == 138) {
+            state.pc++;
+            state.c = state.c * ram[state.pc];
+        } else if (ram[state.pc] == 140) {
+            state.a = state.a / state.b;
+        } else if (ram[state.pc] == 141) {
+            state.a = state.a / state.c;
+        } else if (ram[state.pc] == 142) {
+            state.b = state.b / state.a;
+        } else if (ram[state.pc] == 143) {
+            state.b = state.b / state.c;
+        } else if (ram[state.pc] == 144) {
+            state.c = state.c / state.a;
+        } else if (ram[state.pc] == 145) {
+            state.c = state.c / state.b;
+        } else if (ram[state.pc] == 146) {
+            state.pc++;
+            state.a = state.a / ram[state.pc];
+        } else if (ram[state.pc] == 147) {
+            state.pc++;
+            state.b = state.b / ram[state.pc];
+        } else if (ram[state.pc] == 148) {
+            state.pc++;
+            state.c = state.c / ram[state.pc];
+        } else if (ram[state.pc] == 150) {
+            state.pc++;
+            state.a = state.a & ram[state.pc];
+        } else if (ram[state.pc] == 151) {
+            state.pc++;
+            state.a = state.a | ram[state.pc];
+        } else if (ram[state.pc] == 152) {
+            state.pc++;
+            state.a = state.a ^ ram[state.pc];
+        } else if (ram[state.pc] == 153) {
+            state.a = ~state.a;
+        } else if (ram[state.pc] == 154) {
+            state.a = state.a & state.b;
+        } else if (ram[state.pc] == 155) {
+            state.a = state.a | state.b;
+        } else if (ram[state.pc] == 156) {
+            state.a = state.a ^ state.b;
+        } else if (ram[state.pc] == 160) {
+            for (unsigned int &w: ustack) {
+                w = 0;
             }
-            usp = 0;
-        }
-
-        else if (ram[i] == 161) {
-            ustack[usp] = a;
-            if (usp < USTACKSIZE) {
-                usp++;
+            state.usp = 0;
+        } else if (ram[state.pc] == 161) {
+            ustack[state.usp] = state.a;
+            if (state.usp < USTACK_SIZE) {
+                state.usp++;
             }
-        }
-
-        else if (ram[i] == 162) {
-            ustack[usp] = b;
-            if (usp < USTACKSIZE) {
-                usp++;
+        } else if (ram[state.pc] == 162) {
+            ustack[state.usp] = state.b;
+            if (state.usp < USTACK_SIZE) {
+                state.usp++;
             }
-        }
-
-        else if (ram[i] == 163) {
-            ustack[usp] = c;
-            if (usp < USTACKSIZE) {
-                usp++;
+        } else if (ram[state.pc] == 163) {
+            ustack[state.usp] = state.c;
+            if (state.usp < USTACK_SIZE) {
+                state.usp++;
             }
-        }
-
-        else if (ram[i] == 164) {
-            if (usp>0) {
-                usp--;
-                a = ustack[usp];
+        } else if (ram[state.pc] == 164) {
+            if (state.usp > 0) {
+                state.usp--;
+                state.a = ustack[state.usp];
             }
-        }
-
-        else if (ram[i] == 165) {
-            if (usp>0) {
-                usp--;
-                b = ustack[usp];
+        } else if (ram[state.pc] == 165) {
+            if (state.usp > 0) {
+                state.usp--;
+                state.b = ustack[state.usp];
             }
-        }
-
-        else if (ram[i] == 166) {
-            if (usp>0) {
-                usp--;
-                c = ustack[usp];
+        } else if (ram[state.pc] == 166) {
+            if (state.usp > 0) {
+                state.usp--;
+                state.c = ustack[state.usp];
             }
-        }
-
-        else if (ram[i] == 167) {
-            i++;
-            ustack[usp] = ram[i];
-            if (usp < USTACKSIZE) {
-                usp++;
+        } else if (ram[state.pc] == 167) {
+            state.pc++;
+            ustack[state.usp] = ram[state.pc];
+            if (state.usp < USTACK_SIZE) {
+                state.usp++;
             }
-        }
-
-        else if (ram[i] == 170) {
+        } else if (ram[state.pc] == 170) {
             if (kbhit()) {
-                a = getch();
+                state.a = getch();
             }
-        }
-
-        else if (ram[i] == 180) {
-            i++;
-            if (flags[0]) {
-                ustack[usp] = 1;
+        } else if (ram[state.pc] == 180) {
+            state.pc++;
+            if (state.flags.zero) {
+                ustack[state.usp] = 1;
             } else {
-                ustack[usp] = 0;
+                ustack[state.usp] = 0;
             }
-            if (usp < USTACKSIZE) {
-                usp++;
+            if (state.usp < USTACK_SIZE) {
+                state.usp++;
             }
             continue;
-        }
-        else if (ram[i] == 181) {
-            i++;
-            if (!flags[0]) {
-                ustack[usp] = 1;
+        } else if (ram[state.pc] == 181) {
+            state.pc++;
+            if (!state.flags.zero) {
+                ustack[state.usp] = 1;
             } else {
-                ustack[usp] = 0;
+                ustack[state.usp] = 0;
             }
-            if (usp < USTACKSIZE) {
-                usp++;
+            if (state.usp < USTACK_SIZE) {
+                state.usp++;
             }
             continue;
-        }
-        else if (ram[i] == 182) {
-            i++;
-            if (flags[1]) {
-                ustack[usp] = 1;
+        } else if (ram[state.pc] == 182) {
+            state.pc++;
+            if (state.flags.carry) {
+                ustack[state.usp] = 1;
             } else {
-                ustack[usp] = 0;
+                ustack[state.usp] = 0;
             }
-            if (usp < USTACKSIZE) {
-                usp++;
+            if (state.usp < USTACK_SIZE) {
+                state.usp++;
             }
             continue;
-        }
-        else if (ram[i] == 183) {
-            i++;
-            if (flags[2]) {
-                ustack[usp] = 1;
+        } else if (ram[state.pc] == 183) {
+            state.pc++;
+            if (!state.flags.carry && !state.flags.zero) {
+                ustack[state.usp] = 1;
             } else {
-                ustack[usp] = 0;
+                ustack[state.usp] = 0;
             }
-            if (usp < USTACKSIZE) {
-                usp++;
+            if (state.usp < USTACK_SIZE) {
+                state.usp++;
             }
             continue;
-        }
-
-        else if (ram[i] == 190) {
-            i++;
-            RELJP(ram[i]);
+        } else if (ram[state.pc] == 190) {
+            state.pc++;
+            RELJP(ram[state.pc]);
             continue;
-        }
-        else if (ram[i] == 191) {
-            if (flags[0]) {
-                i++;
-                RELJP(ram[i]);
+        } else if (ram[state.pc] == 191) {
+            if (state.flags.zero) {
+                state.pc++;
+                RELJP(ram[state.pc]);
                 continue;
             } else {
-                i=i+2;
+                state.pc = state.pc + 2;
             }
             continue;
-        }
-        else if (ram[i] == 192) {
-            if (!flags[0]) {
-                i++;
-                RELJP(ram[i]);
+        } else if (ram[state.pc] == 192) {
+            if (!state.flags.zero) {
+                state.pc++;
+                RELJP(ram[state.pc]);
                 continue;
             } else {
-                i=i+2;
+                state.pc = state.pc + 2;
             }
             continue;
-        }
-        else if (ram[i] == 193) {
-            if (flags[1]) {
-                i++;
-                RELJP(ram[i]);
+        } else if (ram[state.pc] == 193) {
+            if (state.flags.carry) {
+                state.pc++;
+                RELJP(ram[state.pc]);
                 continue;
             } else {
-                i=i+2;
+                state.pc = state.pc + 2;
             }
             continue;
-        }
-        else if (ram[i] == 194) {
-            if (flags[2]) {
-                i++;
-                RELJP(ram[i]);
+        } else if (ram[state.pc] == 194) {
+            if (!state.flags.carry && !state.flags.zero) {
+                state.pc++;
+                RELJP(ram[state.pc]);
                 continue;
             } else {
-                i=i+2;
+                state.pc = state.pc + 2;
             }
             continue;
-        }
-
-        else if (ram[i] == 250) {
+        } else if (ram[state.pc] == 250) {
             bc = 0;
-            tmp = 0;
-            while (bc<RAMSIZE) {
+            uint32_t tmp = 0;
+            while (bc < RAM_SIZE) {
                 if (ram[bc] != 0) {
                     tmp++;
                 }
@@ -756,68 +598,29 @@ int main() {
             std::stringstream mon0;
             std::string mon;
             tmp--;
-            std::cout << VERSION << std::endl;
-            std::cout << "RAM Used: " << tmp * 4 << "b / " << RAMSIZE / 256 << "kb (" << tmp*100/RAMSIZE << "%)" << std::endl << std::endl;
-            f_msg = true;
-        }
-
-        else if (ram[i] == 251) {
-            f_dbg = true;
-        }
-
-        else if (ram[i] == 252) {
-            f_dbg = false;
-        }
-
-        else if (ram[i] == 255) {
-            if (sp == 0) {
-                if (f_msg) {
-                    ;
-                    std::cout << std::endl << "End";
-                    getch();
-                }
-                state = 2; // Exit
+            std::cout << "RAM Used: " << tmp * 4 << "b / "
+                    << RAM_SIZE / 256 << "kb (" << tmp * 100 / RAM_SIZE << "%)"
+                    << std::endl << std::endl;
+        } else if (ram[state.pc] == 255) {
+            if (state.sp == 0) {
+                state.isRunning = false;
             } else {
-                sp--;
-                i = stack[sp];
-                stack[sp] = 0;
+                state.sp--;
+                state.pc = stack[state.sp];
+                stack[state.sp] = 0;
                 continue;
             }
-        }
-
-        else if (ram[i] == 300) {
-            char lol[USTACKSIZE];
-            for (int x = 0; x < USTACKSIZE; x++) {
-                lol[x] = ustack[x];
+        } else if (ram[state.pc] == 300) {
+            char lol[USTACK_SIZE];
+            for (int x = 0; x < USTACK_SIZE; x++) {
+                lol[x] = static_cast<char>(ustack[x]);
             }
             system(lol);
+        } else if (ram[state.pc] == 301) {
+            goto_xy(static_cast<SHORT>(state.a), static_cast<SHORT>(state.b));
         }
 
-        else if (ram[i] == 301) {
-            gotoxy(a,b);
-        }
-        /*else if (ram[i] == 302) {
-            gfxclear(a);
-        }
-        else if (ram[i] == 303) {
-            gfxmode(true);
-        }
-        else if (ram[i] == 304) {
-            SetDCPenColor(hdc, RGB(a, b, c));
-        }
-        else if (ram[i] == 305) {
-            SetPixel(hdc, a, b, RGB(255,0,0));
-        }
-        else if (ram[i] == 306) {
-            MoveToEx(hdc, a, b, NULL);
-        }
-        else if (ram[i] == 307) {
-            LineTo(hdc, a, b);
-        }
-        else if (ram[i] == 308) {
-            ReleaseDC(window, hdc);
-        }*/
-        i++;
+        state.pc++;
     }
     return 0;
 }

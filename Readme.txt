@@ -1,62 +1,48 @@
-CppVM v2.3.1 Final от 2019.09.16
 
-Программы храняться в файле bios.cvm (в той же директории что и CppVM.exe)
+    	 W E L C O M E   T O
 
-Изменения:
+█████ ██████ ██████ ██     ██ ██    ██
+█████ ██  ██ ██  ██  ██   ██  ███  ███
+██    ██  ██ ██  ██  ██   ██  ████████
+██    ██████ ██████   ██ ██   ██ ██ ██
+█████ ██     ██       ██ ██   ██    ██
+█████ ██     ██        ███    ██    ██
 
-2019.09.16 [2.3.1]: Статус "Final".
-2019.09.16 [2.3.1]: Разработка комплиятора приостановлена, компилятор перенесён в ./other
-2019.09.16 [2.3.1]: (Компилятор) Исправлена ошибка с добавлением нескольких if или while
-2019.09.16 [2.3.1]: (Компилятор) Добавлены унарные операторы (-, *, &)
-2019.09.09 [2.3.1]: (Комплиятор) Начало работы над комплиятором для CVM
-2019.09.09 [2.3.1]: Начало работы над v2.3.1
-2019.01.27 [2.3.0]: Статус "Final"
-2019.01.27 [2.3.0]: Исправлен баг с флагом отрицательности
-2019.01.27 [2.3.0]: Исправлен баг со сравнением
-2019.01.27 [2.3.0]: Отключены все графические команды (302-308)
-2019.01.27 [2.3.0]: Добавлена команда pushif
-2019.01.13 [2.3.0]: В модуль strings была добавлена функция cmpstr
-2018.12.31 [2.3.0]: Добавлена команда kbhit
-2018.12.30 [2.3.0]: Код оптимизирован, исправлен баг с командами
-2018.12.30 [2.3.0]: Добавлена поддержка пользовательских команд (функций)
-2018.12.30 [2.3.0]: Команды push и pop теперь можно использовать с любым регистром
-2018.12.30 [2.3.0]: Начало разработки 2.3
-2018.12.30 [2.2.0]: Статус "Final"
-2018.12.30 [2.2.0]: Python CVA заменён на CVM Assember 2
-2018.12.24 [2.2.0]: Новая команда "call c"
-2018.12.24 [2.2.0]: Начало разработки CVM Assember 2
-2018.12.29 [2.1.0]: Статус "Final"
-2018.12.01 [2.1.0]: Добавлена директива header <asm>
-2018.12.01 [2.1.0]: Добавлены "классические" комментарии (;comment)
-2018.12.01 [2.1.0]: Добавлен пример "graphics"
-2018.12.01 [2.1.0]: Создан модуль windows
-2018.12.01 [2.1.0]: Добавлены графические команды
-2018.12.01 [2.1.0]: Изменены коды команд setpos и system
-2018.12.01 [2.1.0]: Добавлена возможность выбрать исходный файл
-2018.12.01 [2.1.0]: Некоторые файлы были перемещены
-2018.12.01 [2.1.0]: Начало разработки 2.1
-2018.12.01 [2.0.0]: Статус "Final"
-2018.11.29 [2.0.0]: Правки
+-- designed and programmed by i8086m --
 
 
-Планы:
-
-* Компилятор [2.4]
-
-* Работа с файлами [LTS 2 | 2.5]
-* Проверить все команды и директивы [LTS 2 | 2.5]
-* Запретить доступ к несуществующим ячейкам через RAMSIZE [LTS 2 | 2.5]
-* Добавить предупреждение о переполнении/пустоте пользовательского стека [LTS 2 | 2.5]
-
-* Набор команд SFML [3.X]
-* Перевод исполняемых файлов в BIN-формат [3.X]
-
-* Прерывания
-* Функции copystr и startswith
-* Модуль double.asm
+Executables:
+	* cvm.exe — the c plus plus virtual machine. Executes *.cvm files
+	* asm.exe — the cvm assember. Converts *.asm files to *.cvm
 
 
-Команды:
+TODO List:
+	* Add CLI args to select files
+	* Verify jump command implementation and remove magic numbers
+	* Check RAM_SIZE OOB on RAM access
+	* Warn/halt on stack/ustack overflow
+	* Use binary format for bytecode files`
+	* File I/O
+	* Interrupts
+	* copystr and startswith functions
+	* Floating point support module
+	* Interface for calling native code
+	* A compiler (eventually)
+
+
+Supported assembler directives:
+	* Labels                myLabel:
+	* Comments              ; a comment
+	* Negative numbers      -43 - negative numbers
+	* Strings               "abcde" - strings
+	* Terminated strings    "abcde\0" - terminated strings
+	* Module imports        import folder/file.asm
+	* Move to file header   header some_code_line
+	* Define a function     def myFunc N
+	* Call a function       myFunc A B C
+
+
+Opcode list:
 
 0 - nop
 1 - inc a
@@ -81,15 +67,15 @@ CppVM v2.3.1 Final от 2019.09.16
 19 - call (32)
 
 20 - jmp [32]
-21 - jz  [32]
-22 - jnz [32]
-23 - jn  [32]
-24 - jp  [32]
+21 - jz  [32] // a == b; z
+22 - jnz [32] // a != b; !z
+23 - jl  [32] // a < b; c
+24 - jg  [32] // a > b; !c && !z
 25 - jmp c
 26 - jz  c
 27 - jnz c
-28 - jn  c
-29 - jp  c
+28 - jl  c
+29 - jb  c
 
 
 30 - mov a b
@@ -99,9 +85,7 @@ CppVM v2.3.1 Final от 2019.09.16
 34 - mov c a
 35 - mov c b
 
-40 - СВОБОДНО
-41 - СВОБОДНО
-42 - СВОБОДНО
+
 43 - mov  a [32]
 44 - mov  b [32]
 45 - mov  c [32]
@@ -174,13 +158,13 @@ CppVM v2.3.1 Final от 2019.09.16
 147 - div b [int]
 148 - div c [int]
 
-150 - and [int]		OPCODE ONLY
-151 - or  [int]		OPCODE ONLY
-152 - xor [int]		OPCODE ONLY
-153 - not a		OPCODE ONLY
-154 - and b		OPCODE ONLY
-155 - or b		OPCODE ONLY
-156 - xor b		OPCODE ONLY
+150 - and [int]	    (Not implemented in the assembler yet, sorry)
+151 - or  [int]	    (Not implemented in the assembler yet, sorry)
+152 - xor [int]	    (Not implemented in the assembler yet, sorry)
+153 - not a		    (Not implemented in the assembler yet, sorry)
+154 - and b		    (Not implemented in the assembler yet, sorry)
+155 - or b		    (Not implemented in the assembler yet, sorry)
+156 - xor b		    (Not implemented in the assembler yet, sorry)
 
 160 - wipe
 161 - push a
@@ -195,43 +179,20 @@ CppVM v2.3.1 Final от 2019.09.16
 
 180 - pushif z
 181 - pushif nz
-182 - pushif n
-183 - pushif p
+182 - pushif l
+183 - pushif g
 
 190 - rjmp [signed]
 191 - rjz  [signed]
 192 - rjnz [signed]
-193 - rjn  [signed]
-194 - rjp  [signed]
+193 - rjl  [signed]
+194 - rjg  [signed]
 
 250 - inf
-251 - debug
-252 - nodebug
 255 - ret
 
-300 - do		OPCODE ONLY
-301 - setpos		OPCODE ONLY
+300 - do		    (Extended opcode, not implemented in the assembler)
+301 - setpos		(Extended opcode, not implemented in the assembler)
 
 
-Директивы ассемблера:
 
-label: - метка
-; комментарий - для описания работы программы
--43 - отрицательное число
-"abcde" - строка
-"abcde\0" - строка с терминатором
-import folder/file.asm - импорт модуля folder/file.asm
-header x - перенести строку в начало программы
-def myFunc N - новая функция с N аргументами (0 <= N <= 3)
-myFunc A B C - вызов функции с аргументами A, B и C
-
-Справка по файлам:
-
-*.asm - исходные файлы
-bios.cvm - исполняемый файл
-modules/ - папка с модулями
-examples/ - папка с примерами
-other/ - разные файлы
-asm.exe - ассемблер
-cppvm.exe - виртуальная машина
-readme.txt - информация о сборке

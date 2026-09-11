@@ -42,8 +42,7 @@ string countTokens() {
     while (i < output.length()) {
         if (output[i] != (' ')) {
             tokenlen++;
-        }
-        else {
+        } else {
             if (tokenlen > 0) {
                 tkns++;
             }
@@ -66,15 +65,15 @@ bool isFunction(string testToken) {
 }
 
 
-bool replace(string& str, const string& from, const string& to) {
+bool replace(string &str, const string &from, const string &to) {
     size_t start_pos = str.find(from);
-    if(start_pos == string::npos)
+    if (start_pos == string::npos)
         return false;
     str.replace(start_pos, from.length(), to);
     return true;
 }
 
-void replaceAll(string& str, const string& from, const string& to) {
+void replaceAll(string &str, const string &from, const string &to) {
     size_t pos = 0;
     while ((pos = str.find(from, pos)) != string::npos) {
         str.replace(pos, from.length(), to);
@@ -159,11 +158,9 @@ void opcode() {
             if (com == 3)
                 output += "45 " + token + " ";
         }
-    }
-    else if (token == "wipe") {
+    } else if (token == "wipe") {
         output += "160 ";
-    }
-    else if (token == "push") {
+    } else if (token == "push") {
         getToken();
         if (token == "a") {
             output += "161 ";
@@ -174,9 +171,7 @@ void opcode() {
         } else {
             output += "167 " + token + " ";
         }
-
-    }
-    else if (token == "pop") {
+    } else if (token == "pop") {
         getToken();
         if (token == "a") {
             output += "164 ";
@@ -189,20 +184,15 @@ void opcode() {
             errorCount++;
             return;
         }
-    }
-    else if (token == "kbhit") {
+    } else if (token == "kbhit") {
         output += "170 ";
-    }
-    else if (token == "ret") {
+    } else if (token == "ret") {
         output += "255 ";
-    }
-    else if (token == "put") {
+    } else if (token == "put") {
         output += "10 ";
-    }
-    else if (token == "endl") {
+    } else if (token == "endl") {
         output += "13 ";
-    }
-    else if (token == "inc") {
+    } else if (token == "inc") {
         getToken();
         if (token == "a") {
             output += "1 ";
@@ -214,8 +204,7 @@ void opcode() {
             cout << "Error: INC can be used only on Register\n";
             errorCount++;
         }
-    }
-    else if (token == "dec") {
+    } else if (token == "dec") {
         getToken();
         if (token == "a") {
             output += "4 ";
@@ -228,8 +217,7 @@ void opcode() {
             errorCount++;
             return;
         }
-    }
-    else if (token == "cmp") {
+    } else if (token == "cmp") {
         getToken();
         if (isdigit(token[0])) {
             output += "7 " + token + " ";
@@ -241,8 +229,7 @@ void opcode() {
             cout << "Warning: CMP with Label\n";
             output += "7 " + token + " ";
         }
-    }
-    else if (token == "jnz") {
+    } else if (token == "jnz") {
         getToken();
         if (isdigit(token[0])) {
             output += "22 " + token + " ";
@@ -251,38 +238,27 @@ void opcode() {
         } else {
             output += "22 " + token + " ";
         }
-    }
-    else if (token == "nop") {
+    } else if (token == "nop") {
         output += "0 ";
-    }
-    else if (token == "puts") {
+    } else if (token == "puts") {
         output += "11 ";
-    }
-    else if (token == "putc") {
+    } else if (token == "putc") {
         output += "12 ";
-    }
-    else if (token == "cin") {
+    } else if (token == "cin") {
         output += "14 ";
-    }
-    else if (token == "getkey") {
+    } else if (token == "getkey") {
         output += "15 ";
-    }
-    else if (token == "cls") {
+    } else if (token == "cls") {
         output += "16 ";
-    }
-    else if (token == "exch") {
+    } else if (token == "exch") {
         output += "18 ";
-    }
-    else if (token == "inf") {
+    } else if (token == "inf") {
         output += "250 ";
-    }
-    else if (token == "debug") {
+    } else if (token == "debug") {
         output += "251 ";
-    }
-    else if (token == "nodebug") {
+    } else if (token == "nodebug") {
         output += "252 ";
-    }
-    else if (token == "call") {
+    } else if (token == "call") {
         getToken();
         if (token == "c")
             output += "17 ";
@@ -291,8 +267,7 @@ void opcode() {
         else {
             output += "19 " + token + " ";
         }
-    }
-    else if (token == "rjmp") {
+    } else if (token == "rjmp") {
         getToken();
         if (isdigit(token[0])) {
             output += "190 " + token + " ";
@@ -301,8 +276,7 @@ void opcode() {
             errorCount++;
             return;
         }
-    }
-    else if (token == "rjz") {
+    } else if (token == "rjz") {
         getToken();
         if (isdigit(token[0])) {
             output += "191 " + token + " ";
@@ -311,8 +285,7 @@ void opcode() {
             errorCount++;
             return;
         }
-    }
-    else if (token == "rjnz") {
+    } else if (token == "rjnz") {
         getToken();
         if (isdigit(token[0])) {
             output += "192 " + token + " ";
@@ -321,28 +294,25 @@ void opcode() {
             errorCount++;
             return;
         }
-    }
-    else if (token == "rjn") {
+    } else if (token == "rjl") {
         getToken();
         if (isdigit(token[0])) {
             output += "193 " + token + " ";
         } else {
-            cout << "\nError: RJN can't be used on Int\n";
+            cout << "\nError: RJL can't be used on Int\n";
             errorCount++;
             return;
         }
-    }
-    else if (token == "rjp") {
+    } else if (token == "rjg") {
         getToken();
         if (isdigit(token[0])) {
             output += "194 " + token + " ";
         } else {
-            cout << "\nError: RJP can't be used on Int\n";
+            cout << "\nError: RJG can't be used on Int\n";
             errorCount++;
             return;
         }
-    }
-    else if (token == "jmp") {
+    } else if (token == "jmp") {
         getToken();
         if (isdigit(token[0])) {
             output += "20 " + token + " ";
@@ -355,8 +325,7 @@ void opcode() {
         } else {
             output += "20 " + token + " ";
         }
-    }
-    else if (token == "jz") {
+    } else if (token == "jz") {
         getToken();
         if (isdigit(token[0])) {
             output += "21 " + token + " ";
@@ -369,36 +338,33 @@ void opcode() {
         } else {
             output += "21 " + token + " ";
         }
-    }
-    else if (token == "jn") {
+    } else if (token == "jl") {
         getToken();
         if (isdigit(token[0])) {
             output += "23 " + token + " ";
         } else if (token == "c") {
             output += "28 ";
         } else if (token == "a" || token == "b") {
-            cout << "\nError: JN can't be used on a or b\n";
+            cout << "\nError: JL can't be used on a or b\n";
             errorCount++;
             return;
         } else {
             output += "23 " + token + " ";
         }
-    }
-    else if (token == "jp") {
+    } else if (token == "jg") {
         getToken();
         if (isdigit(token[0])) {
             output += "24 " + token + " ";
         } else if (token == "c") {
             output += "29 ";
         } else if (token == "a" || token == "b") {
-            cout << "\nError: JP can't be used on a or b\n";
+            cout << "\nError: JG can't be used on a or b\n";
             errorCount++;
             return;
         } else {
             output += "24 " + token + " ";
         }
-    }
-    else if (token == "pushif") {
+    } else if (token == "pushif") {
         getToken();
         if (isdigit(token[0])) {
             cout << "\nError: PUSHIF can't be used on integer\n";
@@ -408,17 +374,16 @@ void opcode() {
             output += "180 ";
         } else if (token == "nz") {
             output += "181 ";
-        } else if (token == "n") {
+        } else if (token == "l") {
             output += "182 ";
-        } else if (token == "p") {
+        } else if (token == "g") {
             output += "183 ";
         } else {
             cout << "\nError: PUSHIF can be used only on FLAGS\n";
             errorCount++;
             return;
         }
-    }
-    else if (token == "ld") {
+    } else if (token == "ld") {
         getToken();
         if (token == "a") {
             com = 1;
@@ -472,8 +437,7 @@ void opcode() {
             if (com == 3)
                 output += "52 " + token + " ";
         }
-    }
-    else if (token == "wr") {
+    } else if (token == "wr") {
         getToken();
         if (token == "a") {
             com = 1;
@@ -527,8 +491,7 @@ void opcode() {
             if (com == 3)
                 output += "55 " + token + " ";
         }
-    }
-    else if (token == "add") {
+    } else if (token == "add") {
         getToken();
         if (token == "a") {
             com = 1;
@@ -591,8 +554,7 @@ void opcode() {
             if (com == 3)
                 output += "118 " + token + " ";
         }
-    }
-    else if (token == "sub") {
+    } else if (token == "sub") {
         getToken();
         if (token == "a") {
             com = 1;
@@ -655,8 +617,7 @@ void opcode() {
             if (com == 3)
                 output += "128 " + token + " ";
         }
-    }
-    else if (token == "mul") {
+    } else if (token == "mul") {
         getToken();
         if (token == "a") {
             com = 1;
@@ -719,8 +680,7 @@ void opcode() {
             if (com == 3)
                 output += "138 " + token + " ";
         }
-    }
-    else if (token == "div") {
+    } else if (token == "div") {
         getToken();
         if (token == "a") {
             com = 1;
@@ -783,18 +743,15 @@ void opcode() {
             if (com == 3)
                 output += "148 " + token + " ";
         }
-    }
-    else if (token[token.length() - 1] == ':') {
+    } else if (token[token.length() - 1] == ':') {
         token.erase(token.length() - 1);
         cout << "Label " << token << " at " << countTokens() << endl;
         labelNames[labelCount] = token;
         labelAddresses[labelCount] = countTokens();
         labelCount += 1;
-    }
-    else if (isdigit(token[0])) {
+    } else if (isdigit(token[0])) {
         output += token + " ";
-    }
-    else if (isFunction(token)) {
+    } else if (isFunction(token)) {
         int funcID = 0;
         int argNum;
         string funcName;
@@ -829,8 +786,7 @@ void opcode() {
             output += "166 165 164 ";
         }
         output += "19 " + funcName + " ";
-    }
-    else {
+    } else {
         if (token != "") {
             cout << "Error: undefined expression '" << token << "'\n";
             errorCount++;
@@ -871,16 +827,17 @@ bool readSource(string fileName) {
                     }
                     funcName += directiveArg[x];
                 }
-                if (directiveArg[directiveArg.length()-1] == '0') {
+                if (directiveArg[directiveArg.length() - 1] == '0') {
                     argNum = 0;
-                } else if (directiveArg[directiveArg.length()-1] == '1') {
+                } else if (directiveArg[directiveArg.length() - 1] == '1') {
                     argNum = 1;
-                } else if (directiveArg[directiveArg.length()-1] == '2') {
+                } else if (directiveArg[directiveArg.length() - 1] == '2') {
                     argNum = 2;
-                } else if (directiveArg[directiveArg.length()-1] == '3') {
+                } else if (directiveArg[directiveArg.length() - 1] == '3') {
                     argNum = 3;
                 } else {
-                    cout << "Preprocessor error: invalid number of arguments: " << directiveArg[directiveArg.length()-1] << "\n";
+                    cout << "Preprocessor error: invalid number of arguments: " << directiveArg[
+                        directiveArg.length() - 1] << "\n";
                     errorCount++;
                 }
                 cout << "Function " << funcName << " with " << argNum << " arguments\n";
@@ -909,7 +866,7 @@ bool readSource(string fileName) {
                                 continue;
                             }
                             stringstream strCodes;
-                            strCodes << (int)line[x];
+                            strCodes << (int) line[x];
                             source += strCodes.str() + " ";
                             x++;
                             if (x >= line.length()) {
@@ -1004,7 +961,7 @@ int main() {
 
     /// LABELS
     for (int x = 0; x < labelCount; x++) {
-        replaceAll(output, " "+labelNames[x]+" ", " "+labelAddresses[x]+" ");
+        replaceAll(output, " " + labelNames[x] + " ", " " + labelAddresses[x] + " ");
     }
 
     /// CONVERSION
@@ -1029,10 +986,10 @@ int main() {
             oneInt = 0;
             strToInt >> oneInt;
             wordBuffer = "";
-            fout << ((oneInt&0xFF000000)>>24) << " ";
-            fout << ((oneInt&0x00FF0000)>>16) << " ";
-            fout << ((oneInt&0x0000FF00)>>8)  << " ";
-            fout << ((oneInt&0x000000FF))     << "\n";
+            fout << ((oneInt & 0xFF000000) >> 24) << " ";
+            fout << ((oneInt & 0x00FF0000) >> 16) << " ";
+            fout << ((oneInt & 0x0000FF00) >> 8) << " ";
+            fout << ((oneInt & 0x000000FF)) << "\n";
         }
     }
     fout.close();
