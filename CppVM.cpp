@@ -19,15 +19,16 @@ std::ifstream fin("bios.cvm"); // Чтение файла
 
 // TODO: Graphics support?
 // TODO: File Access (Self-Programming?)
-// TODO: Relative jumps
-// TODO: 'MOV' fix
 // TODO: Auto-flags (sub, add, mull, div...)
 // TODO: '%' function
 // TODO: Multifile
+// TODO: Enchance assembler output
+// TODO: ASM nagative and chars
+// TODO: ASM 30-39
 
 int main() {
 
-	std::cout << "CppVM v1.1" << std::endl;//v171222
+	std::cout << "CppVM v1.1.1" << std::endl;//v171223
 	
 	std::cout << "RAM: " << RAMSIZE/1024 << "KB" << std::endl << std::endl;
 
@@ -236,6 +237,88 @@ r:
 			i++;
 			goto r;
 		}
+		if (ram[i] == 30) {
+			i++;
+			RELJP(ram[i]);
+			goto r;
+		}
+		if (ram[i] == 31) {
+			if (f[0]) {
+				i++;
+				RELJP(ram[i]);
+				goto r;
+			}
+			i=i+3;
+			goto r;
+		}
+		if (ram[i] == 32) {
+			if (!f[0]) {
+				i++;
+				RELJP(ram[i]);
+				goto r;
+			}
+			i=i+3;
+			goto r;
+		}
+		if (ram[i] == 33) {
+			if (f[1]) {
+				i++;
+				RELJP(ram[i]);
+				goto r;
+			}
+			i=i+3;
+			goto r;
+		}
+		if (ram[i] == 34) {
+			if (!f[1]) {
+				i++;
+				RELJP(ram[i]);
+				goto r;
+			}
+			i=i+3;
+			goto r;
+		}
+		if (ram[i] == 35) {
+			i++;
+			RELJP(c);
+			goto r;
+		}
+		if (ram[i] == 36) {
+			if (f[0]) {
+				i++;
+				RELJP(c);
+				goto r;
+			}
+			i++;
+			goto r;
+		}
+		if (ram[i] == 37) {
+			if (!f[0]) {
+				i++;
+				RELJP(c);
+				goto r;
+			}
+			i++;
+			goto r;
+		}
+		if (ram[i] == 38) {
+			if (f[1]) {
+				i++;
+				RELJP(c);
+				goto r;
+			}
+			i++;
+			goto r;
+		}
+		if (ram[i] == 39) {
+			if (!f[1]) {
+				i++;
+				RELJP(c);
+				goto r;
+			}
+			i++;
+			goto r;
+		}
 		if (ram[i] == 40) {
 			a = b;
 		}
@@ -274,37 +357,37 @@ r:
 		}
 		if (ram[i] == 50) {
 			i++;
-			a=ram[ram[i]];
+			a=ram[ram[i]*256+ram[i+1]];
 			i++;
 			goto r;
 		}
 		if (ram[i] == 51) {
 			i++;
-			b=ram[ram[i]];
+			b=ram[ram[i]*256+ram[i+1]];
 			i++;
 			goto r;
 		}
 		if (ram[i] == 52) {
 			i++;
-			c=ram[ram[i]];
+			c=ram[ram[i]*256+ram[i+1]];
 			i++;
 			goto r;
 		}
 		if (ram[i] == 53) {
 			i++;
-			ram[ram[i]] = a;
+			ram[ram[i]*256+ram[i+1]] = a;
 			i++;
 			goto r;
 		}
 		if (ram[i] == 54) {
 			i++;
-			ram[ram[i]] = b;
+			ram[ram[i]*256+ram[i+1]] = b;
 			i++;
 			goto r;
 		}
 		if (ram[i] == 55) {
 			i++;
-			ram[ram[i]] = c;
+			ram[ram[i]*256+ram[i+1]]1 = c;
 			i++;
 			goto r;
 		}
