@@ -5,5 +5,5 @@ asm.exe
 echo.
 echo.
 echo.
-cppvm.exe
+cvm.exe
 pause

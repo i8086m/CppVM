@@ -1,5 +1,5 @@
 @ECHO OFF
 asm.exe
 echo.
-cppvm.exe
+cvm.exe
 pause
