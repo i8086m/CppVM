@@ -12,8 +12,8 @@
 
 
 Executables:
-	* cvm.exe — the c plus plus virtual machine. Executes *.cvm files
-	* asm.exe — the cvm assember. Converts *.asm files to *.cvm
+	* cvm.exe — the virtual machine. Executes *.cvm files
+	* asm.exe — the assember. Converts *.asm files to *.cvm
 
 
 TODO List:
@@ -63,7 +63,6 @@ Opcode list:
 15 - getkey
 16 - cls
 17 - call c
-18 - exch
 19 - call (32)
 
 20 - jmp [32]
@@ -188,7 +187,6 @@ Opcode list:
 193 - rjl  [signed]
 194 - rjg  [signed]
 
-250 - inf
 255 - ret
 
 300 - do		    (Extended opcode, not implemented in the assembler)

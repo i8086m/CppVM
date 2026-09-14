@@ -1,93 +1,36 @@
-#include "windows.h"
-#include <iostream>
 #include <conio.h>
-#include <cstdint>
-#include <fstream>
-#include <string>
-#include <sstream>
+#include <stdint.h>
+#include <stdio.h>
 
-#define RAM_SIZE (1024 * 1024) // 1KB RAM
-#define STACK_SIZE 64
-#define USTACK_SIZE 128
+#include "cvm/config.h"
+#include "cvm/fio.h"
+#include "cvm/state.h"
+#include "cvm/xplatformio.h"
 
 #define RELJP(ADDR) if (ADDR > 2147483647) state.pc = state.pc + ADDR - 4294967296; else state.pc = state.pc + ADDR
 
-#define VERSION "CppVM v3.0.0 Indev"
 
-
-struct VmFlags {
-    bool zero = false;
-    bool carry = false;
-    bool sign = false;
-    bool overflow = false;
-};
-
-struct VmState {
-    bool isRunning = true;
-
-    uint32_t a = 0, b = 0, c = 0; // General purpose registers
-    uint32_t na = 0, nb = 0, nc = 0; // Alternative registers TODO consider deprecating?
-    uint32_t sp = 0; // Stack Pointer
-    uint32_t usp = 0; // User Stack Pointer
-    uint32_t pc = 0; // Program Counter
-
-    VmFlags flags = VmFlags();
-};
-
-unsigned int ram[RAM_SIZE]; // TODO init ram?
+unsigned int ram[RAM_SIZE];
 unsigned int stack[STACK_SIZE];
 unsigned int ustack[USTACK_SIZE];
 
-auto state = VmState();
-
-
-std::ifstream fin("bios.cvm"); // Чтение файла
-
-
-void goto_xy(const SHORT x, const SHORT y) {
-    COORD coord;
-    coord.X = x;
-    coord.Y = y;
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
-}
+VmState state;
 
 int main() {
-    SetConsoleTitle(VERSION);
-    std::cout << "CVM Started" << std::endl; // TODO remove
+    cvm_xplatformio_set_title(VERSION);
 
-    while (state.pc < RAM_SIZE - 1) {
-        /// erase RAM
-        ram[state.pc] = 0;
-        state.pc++;
-    }
+    cvm_state_init(&state);
+    cvm_fio_erase(ram, RAM_SIZE);
+    cvm_fio_erase(stack, STACK_SIZE);
+    cvm_fio_erase(ustack, USTACK_SIZE);
     ram[RAM_SIZE - 1] = 255;
-    state.pc = 0;
 
-    std::cout << "Loading bios..." << std::endl; // TODO remove
-
-    int buff, bc = 0;
-    if (!fin.is_open()) {
-        /// bootloader
-        std::cout << "bios.cvm not found" << std::endl;
-        system("pause");
-        return 0;
+    if (cvm_fio_read_program(ram, "bios.cvm") != 0) {
+        printf("Unable to read the program file. Terminating.\n");
+        return 1;
     }
 
-    while (bc < RAM_SIZE && !fin.eof()) {
-        fin >> buff;
-        ram[bc] = buff;
-        fin >> buff;
-        ram[bc] = ram[bc] * 256 + buff;
-        fin >> buff;
-        ram[bc] = ram[bc] * 256 + buff;
-        fin >> buff;
-        ram[bc] = ram[bc] * 256 + buff;
-        //std::cout << bc << " " << ram[bc] <<std::endl;
-        bc++;
-    }
-    fin.close();
 
-    std::cout << "CVM is running" << std::endl; // TODO remove
     while (state.isRunning) {
         if (ram[state.pc] == 0) {
             // Do nothing
@@ -156,51 +99,28 @@ int main() {
             state.flags.overflow =
                     ((state.a ^ state.c) & (state.a ^ result) & 0x80000000u) != 0;
         } else if (ram[state.pc] == 10) {
-            std::cout << state.a;
+            printf("%u", state.a);
         } else if (ram[state.pc] == 11) {
-            if (state.a > 2147483648U) {
-                std::cout << state.a - 4294967296U;
-            } else {
-                std::cout << state.a;
-            }
+            printf("%d", (int32_t) state.a);
         } else if (ram[state.pc] == 12) {
-            ///unicode?
-            if (state.a < 256) {
-                char ch;
-                ch = (char) state.a;
-                //std::cout << ch;
-                putchar(ch);
-            }
+            putchar((char) (state.a & 0xFF));
         } else if (ram[state.pc] == 13) {
             putchar('\n');
         } else if (ram[state.pc] == 14) {
-            uint32_t readValue;
-            std::cin >> readValue;
-            state.a = readValue;
+            scanf("%uld", &state.a); // todo. this is unsafe.
         } else if (ram[state.pc] == 15) {
             state.a = getch();
         } else if (ram[state.pc] == 16) {
-            system("cls");
+            cvm_xplatformio_execute_command("cls");
         } else if (ram[state.pc] == 17) {
             if (state.sp < STACK_SIZE) {
                 stack[state.sp] = state.pc + 1;
                 state.sp++;
                 state.pc = state.c;
                 continue;
-            } else {
-                std::cout << std::endl << "Error: Stack Overflow" << std::endl;
-                state.isRunning = false;
             }
-        } else if (ram[state.pc] == 18) {
-            uint32_t tempA = state.a;
-            uint32_t tempB = state.b;
-            uint32_t tempC = state.c;
-            state.a = state.na;
-            state.b = state.nb;
-            state.c = state.nc;
-            state.na = tempA;
-            state.nb = tempB;
-            state.nc = tempC;
+            printf("Error: Stack Overflow\n");
+            state.isRunning = false;
         } else if (ram[state.pc] == 19) {
             if (state.sp < STACK_SIZE) {
                 stack[state.sp] = state.pc + 2;
@@ -208,10 +128,9 @@ int main() {
                 state.pc++;
                 state.pc = ram[state.pc];
                 continue;
-            } else {
-                std::cout << std::endl << "Error: Stack Overflow" << std::endl;
-                state.isRunning = false;
             }
+            printf("Error: Stack Overflow\n");
+            state.isRunning = false;
         } else if (ram[state.pc] == 20) {
             state.pc++;
             state.pc = ram[state.pc];
@@ -222,36 +141,32 @@ int main() {
                 state.pc++;
                 state.pc = ram[state.pc];
                 continue;
-            } else {
-                state.pc++;
             }
+            state.pc++;
         } else if (ram[state.pc] == 22) {
             // not equal to
             if (!state.flags.zero) {
                 state.pc++;
                 state.pc = ram[state.pc];
                 continue;
-            } else {
-                state.pc++;
             }
+            state.pc++;
         } else if (ram[state.pc] == 23) {
             // less than
             if (state.flags.carry) {
                 state.pc++;
                 state.pc = ram[state.pc];
                 continue;
-            } else {
-                state.pc++;
             }
+            state.pc++;
         } else if (ram[state.pc] == 24) {
             // greater than
             if (!state.flags.carry && !state.flags.zero) {
                 state.pc++;
                 state.pc = ram[state.pc];
                 continue;
-            } else {
-                state.pc++;
             }
+            state.pc++;
         } else if (ram[state.pc] == 25) {
             state.pc = state.c;
             continue;
@@ -458,8 +373,8 @@ int main() {
         } else if (ram[state.pc] == 156) {
             state.a = state.a ^ state.b;
         } else if (ram[state.pc] == 160) {
-            for (unsigned int &w: ustack) {
-                w = 0;
+            for (int i = 0; i < USTACK_SIZE; i++) {
+                ustack[i] = 0;
             }
             state.usp = 0;
         } else if (ram[state.pc] == 161) {
@@ -555,52 +470,33 @@ int main() {
                 state.pc++;
                 RELJP(ram[state.pc]);
                 continue;
-            } else {
-                state.pc = state.pc + 2;
             }
+            state.pc = state.pc + 2;
             continue;
         } else if (ram[state.pc] == 192) {
             if (!state.flags.zero) {
                 state.pc++;
                 RELJP(ram[state.pc]);
                 continue;
-            } else {
-                state.pc = state.pc + 2;
             }
+            state.pc = state.pc + 2;
             continue;
         } else if (ram[state.pc] == 193) {
             if (state.flags.carry) {
                 state.pc++;
                 RELJP(ram[state.pc]);
                 continue;
-            } else {
-                state.pc = state.pc + 2;
             }
+            state.pc = state.pc + 2;
             continue;
         } else if (ram[state.pc] == 194) {
             if (!state.flags.carry && !state.flags.zero) {
                 state.pc++;
                 RELJP(ram[state.pc]);
                 continue;
-            } else {
-                state.pc = state.pc + 2;
             }
+            state.pc = state.pc + 2;
             continue;
-        } else if (ram[state.pc] == 250) {
-            bc = 0;
-            uint32_t tmp = 0;
-            while (bc < RAM_SIZE) {
-                if (ram[bc] != 0) {
-                    tmp++;
-                }
-                bc++;
-            }
-            std::stringstream mon0;
-            std::string mon;
-            tmp--;
-            std::cout << "RAM Used: " << tmp * 4 << "b / "
-                    << RAM_SIZE / 256 << "kb (" << tmp * 100 / RAM_SIZE << "%)"
-                    << std::endl << std::endl;
         } else if (ram[state.pc] == 255) {
             if (state.sp == 0) {
                 state.isRunning = false;
@@ -611,13 +507,13 @@ int main() {
                 continue;
             }
         } else if (ram[state.pc] == 300) {
-            char lol[USTACK_SIZE];
+            char executeBuffer[USTACK_SIZE];
             for (int x = 0; x < USTACK_SIZE; x++) {
-                lol[x] = static_cast<char>(ustack[x]);
+                executeBuffer[x] = (char) (ustack[x]);
             }
-            system(lol);
+            cvm_xplatformio_execute_command(executeBuffer);
         } else if (ram[state.pc] == 301) {
-            goto_xy(static_cast<SHORT>(state.a), static_cast<SHORT>(state.b));
+            cvm_xplatformio_set_position(state.a, state.b);
         }
 
         state.pc++;

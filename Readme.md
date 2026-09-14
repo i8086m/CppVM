@@ -1,10 +1,10 @@
 
 # CppVM
-## A small virtual machine (bytecode interpreter) implemented in C++
+## A small virtual machine (bytecode interpreter) and a corresponding toolchain implemented in C/C++
 
 
 This project contains:
-* A c plus plus virtual machine that executes *.cvm files
+* A virtual machine that executes *.cvm files
 * A cvm assember that converts *.asm files to *.cvm
 * A bunch of other stuff including the W.I.P. high-level language compiler
 
